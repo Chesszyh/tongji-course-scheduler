@@ -1,3 +1,4 @@
+import os
 from utils import bckndSql
 from utils.bckndTools import arrangementTextToObj, splitEndline, optCourseQueryListGenerator
 from flask import Flask, request, jsonify
@@ -7,7 +8,8 @@ from datetime import datetime
 app = Flask(__name__)
 
 CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini', encoding='utf-8')
+CONFIG.read(os.path.join(os.path.dirname(__file__), 'config.ini'), encoding='utf-8')
+print(f"Config file loaded from: {os.path.join(os.path.dirname(__file__), 'config.ini')}")
 
 IS_DEBUG = CONFIG['Switch']['debug'] # 1 / 0
 
@@ -820,8 +822,18 @@ def getLatestUpdateTime():
     with bckndSql.bckndSql() as sql:
         result = sql.getLatestUpdateTime()
 
+    if result is None:
+        return jsonify({
+            "code": 200,
+            "msg": "查询成功",
+            "data": "暂无数据更新记录"
+        }), 200
+
     return jsonify({
         "code": 200,
         "msg": "查询成功",
         "data": datetime.strftime(result, "%Y-%m-%d")
     }), 200
+
+if __name__ == '__main__':
+    app.run(debug=bool(int(IS_DEBUG)), host='0.0.0.0', port=5000)

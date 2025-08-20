@@ -1,5 +1,5 @@
 # 加密部分
-
+import os
 import configparser # 读取配置文件
 import requests # 网络请求
 from Crypto.PublicKey import RSA # RSA 加密
@@ -9,9 +9,10 @@ import base64 # base64 编码
 # from urllib.parse import quote_plus
 
 # 读取配置文件
-
 CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(script_dir, '..', 'config.ini')
+CONFIG.read(config_path, encoding='utf-8')
 
 # 账号密码认证部分
 STU_NO = CONFIG['Account']['sno']

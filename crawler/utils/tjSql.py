@@ -1,9 +1,12 @@
+import os
 import mysql.connector
 import configparser
 
 # 读取配置文件
 CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini', encoding='utf-8')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(script_dir, '..', 'config.ini')
+CONFIG.read(config_path, encoding='utf-8')
 
 # 设置数据库连接
 DB_HOST = CONFIG['Sql']['host']
