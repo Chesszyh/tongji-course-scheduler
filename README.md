@@ -24,14 +24,14 @@ npm install
 
 to install all dependencies. 
 
-Then, you should prepare a local mysql database. For example if you are using Docker to run a mysql container on 3306:
+Then, you should prepare a local mysql database. For example, if you are using Docker to run a mysql container on port 3306:
 
 ```bash
 docker pull mysql
 docker run -d \
   --name mysql \
   -e MYSQL_ROOT_PASSWORD=your_password \
-  -e MYSQL_DATABASE=test \
+  -e MYSQL_DATABASE=tongji_course \
   -p 3306:3306 \
   -v ~/mysql-data:/var/lib/mysql \
   mysql
@@ -46,75 +46,77 @@ You can also deploy mysql manually.
 First, login to MySQL:
 
 ```bash
-docker exec -it mysql mysql -uroot -p your_password
+docker exec -it mysql mysql -uroot -p
 ```
 
 After logging in, you need to create the database schema for the application to work properly.
 
+<details>
+<summary>Show SQL schema</summary>
+
 ```sql
-CREATE DATABASE tongji_course;
-use tongji_course;
+CREATE DATABASE IF NOT EXISTS tongji_course;
+USE tongji_course;
 
 -- 课程性质表
 CREATE TABLE `coursenature` (
   `courseLabelId` INT NOT NULL,
   `courseLabelName` VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`courseLabelId`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 校区表
 CREATE TABLE `campus` (
   `campus` VARCHAR(255) NOT NULL,
   `campusI18n` VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`campus`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 学院表
 CREATE TABLE `faculty` (
   `faculty` VARCHAR(255) NOT NULL,
   `facultyI18n` VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`faculty`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 学期表
 CREATE TABLE `calendar` (
   `calendarId` INT NOT NULL,
   `calendarIdI18n` VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`calendarId`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 授课语言表
 CREATE TABLE `language` (
   `teachingLanguage` VARCHAR(255) NOT NULL,
   `teachingLanguageI18n` VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`teachingLanguage`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 考核方式表
 CREATE TABLE `assessment` (
   `assessmentMode` VARCHAR(255) NOT NULL,
   `assessmentModeI18n` VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`assessmentMode`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 专业表
 CREATE TABLE `major` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `code` VARCHAR(255) DEFAULT NULL,
-  `grade` VARCHAR(255) DEFAULT NULL,
+  `grade` INT DEFAULT NULL,
   `name` VARCHAR(255) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `major_code_grade` (`code`,`grade`)
-);
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 课程详情表
 CREATE TABLE `coursedetail` (
-  `id` VARCHAR(255) NOT NULL,
+  `id` BIGINT NOT NULL,
   `code` VARCHAR(255) DEFAULT NULL,
   `name` VARCHAR(255) DEFAULT NULL,
   `courseLabelId` INT DEFAULT NULL,
   `assessmentMode` VARCHAR(255) DEFAULT NULL,
-  `period` VARCHAR(255) DEFAULT NULL,
+  `period` INT DEFAULT NULL,
   `weekHour` INT DEFAULT NULL,
   `campus` VARCHAR(255) DEFAULT NULL,
   `number` INT DEFAULT NULL,
@@ -123,57 +125,73 @@ CREATE TABLE `coursedetail` (
   `endWeek` INT DEFAULT NULL,
   `courseCode` VARCHAR(255) DEFAULT NULL,
   `courseName` VARCHAR(255) DEFAULT NULL,
-  `credit` FLOAT DEFAULT NULL,
+  `credit` DOUBLE DEFAULT NULL,
   `teachingLanguage` VARCHAR(255) DEFAULT NULL,
   `faculty` VARCHAR(255) DEFAULT NULL,
   `calendarId` INT DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `courseCode` (`courseCode`),
-  KEY `calendarId` (`calendarId`),
-  KEY `courseLabelId` (`courseLabelId`),
+  KEY `nature_idx` (`courseLabelId`),  
+  KEY `assess_idx` (`assessmentMode`),  
+  KEY `campusKey_idx` (`campus`),  
+  KEY `facultyKey_idx` (`faculty`),  
+  KEY `calendarKey_idx` (`calendarId`),  
+  KEY `langKey_idx` (`teachingLanguage`),  
+
   CONSTRAINT `coursedetail_ibfk_1` FOREIGN KEY (`courseLabelId`) REFERENCES `coursenature` (`courseLabelId`),
   CONSTRAINT `coursedetail_ibfk_2` FOREIGN KEY (`campus`) REFERENCES `campus` (`campus`),
   CONSTRAINT `coursedetail_ibfk_3` FOREIGN KEY (`faculty`) REFERENCES `faculty` (`faculty`),
   CONSTRAINT `coursedetail_ibfk_4` FOREIGN KEY (`calendarId`) REFERENCES `calendar` (`calendarId`),
   CONSTRAINT `coursedetail_ibfk_5` FOREIGN KEY (`teachingLanguage`) REFERENCES `language` (`teachingLanguage`),
-  CONSTRAINT `coursedetail_ibfk_6` FOREIGN KEY (`assessmentMode`) REFERENCES `assessment` (`assessmentMode`)
-);
+  CONSTRAINT `coursedetail_ibfk_6` FOREIGN KEY (`assessmentMode`) REFERENCES `assessment` (`assessmentMode`),
+
+  CONSTRAINT `natureKey` FOREIGN KEY (`courseLabelId`) REFERENCES `coursenature` (`courseLabelId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `campusKey` FOREIGN KEY (`campus`) REFERENCES `campus` (`campus`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `facultyKey` FOREIGN KEY (`faculty`) REFERENCES `faculty` (`faculty`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `calendarKey` FOREIGN KEY (`calendarId`) REFERENCES `calendar` (`calendarId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `langKey` FOREIGN KEY (`teachingLanguage`) REFERENCES `language` (`teachingLanguage`),
+  CONSTRAINT `assessKey` FOREIGN KEY (`assessmentMode`) REFERENCES `assessment` (`assessmentMode`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 教师表
 CREATE TABLE `teacher` (
-  `id` VARCHAR(255) NOT NULL,
-  `teachingClassId` VARCHAR(255) DEFAULT NULL,
+  `id` BIGINT NOT NULL,
+  `teachingClassId` BIGINT DEFAULT NULL,
   `teacherCode` VARCHAR(255) DEFAULT NULL,
   `teacherName` VARCHAR(255) DEFAULT NULL,
-  `arrangeInfoText` TEXT,
+  `arrangeInfoText` MEDIUMTEXT DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `teachingClassId` (`teachingClassId`),
   CONSTRAINT `teacher_ibfk_1` FOREIGN KEY (`teachingClassId`) REFERENCES `coursedetail` (`id`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 专业与课程关联表
 CREATE TABLE `majorandcourse` (
+  `id` INT NOT NULL AUTO_INCREMENT,  
   `majorId` INT NOT NULL,
-  `courseId` VARCHAR(255) NOT NULL,
-  PRIMARY KEY (`majorId`,`courseId`),
-  KEY `courseId` (`courseId`),
+  `courseId` BIGINT NOT NULL,
+  PRIMARY KEY (`id`),  
+    KEY `courseKey_idx` (`courseId`),  
+    KEY `majorKeyForMajor_idx` (`majorId`),  
+    CONSTRAINT `courseKeyForMajor` FOREIGN KEY (`courseId`) REFERENCES `coursedetail` (`id`),  
+    CONSTRAINT `majorKeyForMajor` FOREIGN KEY (`majorId`) REFERENCES `major` (`id`),
   CONSTRAINT `majorandcourse_ibfk_1` FOREIGN KEY (`majorId`) REFERENCES `major` (`id`),
   CONSTRAINT `majorandcourse_ibfk_2` FOREIGN KEY (`courseId`) REFERENCES `coursedetail` (`id`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 抓取日志表
 CREATE TABLE `fetchlog` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `fetchTime` DATETIME NOT NULL,
+  `fetchTime` DATETIME DEFAULT NULL,
+  `msg` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```
+</details>
 
 ### crawler
 
 To make login function possible, you need to add a `config.ini` file at `./crawler`, which includes your student ID and password in clear text:
-
-> TODO: Is qq email still needed?
 
 ```ini
 # file_path: ./crawler/config.ini
@@ -186,12 +204,15 @@ server_domain = imap.qq.com
 server_port = 993
 qq_emailaddr = your_id@qq.com
 qq_grantcode = your_grant_code # You need to enable IMAP in QQ Mail settings and get the authorization code
-manual_login = True
+manual_login = True # TODO
 
 [Sql]
 host = 127.0.0.1
 user = root
-password = your_password
+password = 
+# should be different in production  
+r_user = root  
+r_password = 
 database = tongji_course
 port = 3306
 charset = utf8mb4
@@ -199,14 +220,14 @@ charset = utf8mb4
 
 ### backend
 
-You also need to configure the backend. NOTE that `r_user` should only have read access to the database. You can still use root for simplicity.
+Here's the template of `config.ini` file at `./backend`.
 
 ```ini
 # file_path: ./backend/config.ini
 [Sql]
 host = 127.0.0.1
 r_user = root
-r_password = your_password
+r_password = 
 database = tongji_course
 port = 3306
 charset = utf8mb4
@@ -220,10 +241,12 @@ debug = 0
 ```bash
 # Start the crawler.
 # This will fetch the course list from the university website. It may take a while.
-python crawler/fetchCourseList.py
+cd crawler
+python fetchCourseList.py
 
 # Start the backend
-python backend/app.py # default on 5000
+cd backend
+flask run # default on 1239
 
 # Start the frontend
 cd xkFrontendts

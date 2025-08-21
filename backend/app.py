@@ -9,7 +9,6 @@ app = Flask(__name__)
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read(os.path.join(os.path.dirname(__file__), 'config.ini'), encoding='utf-8')
-print(f"Config file loaded from: {os.path.join(os.path.dirname(__file__), 'config.ini')}")
 
 IS_DEBUG = CONFIG['Switch']['debug'] # 1 / 0
 
