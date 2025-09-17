@@ -5,13 +5,25 @@
       <a-spin :spinning="$store.state.isSpin" :indicator="myIndicator" tip="Loading..." size="large">  
         <MyHeader />
         <MajorInfo @changeMajor="resetSelectedRows" />
-        <a-layout>
-          <div class="flex flex-row space-x-4 h-max m-2">
-            <CourseRoughList @openOverview="handleOpen"/>
-            <CourseDetailList />
-          </div>
+        <a-layout class="main-content-layout">
+          <a-layout-content class="main-content">
+            <div class="flex flex-row space-x-4 h-max m-2">
+              <CourseRoughList @openOverview="handleOpen"/>
+              <CourseDetailList />
+            </div>
+            <TimeTable @cellClick="findCourseByTime" />
+          </a-layout-content>
+          
+          <!-- 右侧AI Chat边栏 -->
+          <a-layout-sider 
+            class="ai-chat-sider" 
+            :width="400" 
+            theme="light"
+            :collapsible="false"
+          >
+            <AiChatSidebar />
+          </a-layout-sider>
         </a-layout>
-        <TimeTable @cellClick="findCourseByTime" />
         <MyFooter />
       </a-spin>
     </a-layout>
@@ -63,6 +75,7 @@ export default {
     MajorInfo: defineAsyncComponent(() => import('./components/MajorInfo.vue')),
     CourseOverview: defineAsyncComponent(() => import('./components/CourseOverview.vue')),
     OptionalCourseTimeOverview: defineAsyncComponent(() => import('./components/OptionalCourseTimeOverview.vue')),
+    AiChatSidebar: defineAsyncComponent(() => import('./components/AiChatSidebar.vue')),
     LoadingOutlined
   },
   data() {
@@ -258,3 +271,58 @@ export default {
   }
 }
 </script>
+
+<style>
+/* 主布局样式 */
+.main-content-layout {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+.main-content {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* AI Chat 侧边栏样式 */
+.ai-chat-sider {
+  background: #ffffff !important;
+  border-left: 1px solid #e8e8e8;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.06);
+  height: calc(100vh - 200px); /* 根据页面头部高度调整 */
+  position: sticky;
+  top: 0;
+}
+
+.ai-chat-sider .ant-layout-sider-children {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 确保主要内容区域能够正确缩放 */
+.ant-layout {
+  min-height: auto;
+}
+
+/* 调整课程表的边距，避免与侧边栏重叠 */
+.main-content .ant-layout-content {
+  padding: 0;
+  margin: 0;
+}
+
+/* 修复可能的响应式问题 */
+@media (max-width: 1400px) {
+  .ai-chat-sider {
+    width: 350px !important;
+    min-width: 350px !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .ai-chat-sider {
+    width: 300px !important;
+    min-width: 300px !important;
+  }
+}
+</style>
