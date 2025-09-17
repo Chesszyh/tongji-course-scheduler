@@ -825,3 +825,109 @@ def getLatestUpdateTime():
         "msg": "查询成功",
         "data": datetime.strftime(result, "%Y-%m-%d")
     }), 200
+
+@app.route('/api/getAllRooms', methods=['POST'])
+def getAllRooms():
+    '''
+    Get all available rooms.
+
+    Payload:
+    ```json
+    {
+        "calendarId": 119
+    }
+    ```
+
+    Response:
+    ```json
+    {
+        "code": 200,
+        "msg": "查询成功", 
+        "data": ["北214", "南129", "A楼101", ...]
+    }
+    ```
+    '''
+
+    payload = request.json
+
+    # 字段合法性检验
+    if not payload.get('calendarId'):
+        return jsonify({
+            "code": 400,
+            "msg": "请指定 calendarId",
+        }), 400
+
+    with bckndSql.bckndSql() as sql:
+        result = sql.getAllRooms(payload['calendarId'])
+
+    return jsonify({
+        "code": 200,
+        "msg": "查询成功",
+        "data": result
+    }), 200
+
+@app.route('/api/getCoursesByRoom', methods=['POST'])
+def getCoursesByRoom():
+    '''
+    Get courses by room name.
+
+    Payload:
+    ```json
+    {
+        "room": "北214",
+        "calendarId": 119
+    }
+    ```
+
+    Response:
+    ```json
+    {
+        "code": 200,
+        "msg": "查询成功",
+        "data": [
+            {
+                "courseCode": "340012",
+                "courseName": "大学物理实验",
+                "code": "34001201",
+                "faculty": "物理科学与工程学院",
+                "credit": 1.0,
+                "campus": "四平路校区",
+                "teachers": [
+                    {
+                        "teacherCode": "13060",
+                        "teacherName": "李华"
+                    }
+                ],
+                "arrangementInfo": [
+                    {
+                        "arrangementText": "星期三7-8节 [2-4双 5-6 10-12 14 17] 北214",
+                        "occupyDay": 3,
+                        "occupyTime": [7, 8],
+                        "occupyWeek": [2, 4, 5, 6, 10, 11, 12, 14, 17],
+                        "occupyRoom": "北214",
+                        "teacherAndCode": "李华(13060)"
+                    }
+                ]
+            }
+        ]
+    }
+    ```
+    '''
+
+    payload = request.json
+
+    # 字段合法性检验
+    if not payload.get('calendarId') or not payload.get('room'):
+        return jsonify({
+            "code": 400,
+            "msg": "请指定 calendarId 和 room",
+        }), 400
+
+    with bckndSql.bckndSql() as sql:
+        result = sql.getCoursesByRoom(payload['room'], payload['calendarId'])
+
+    return jsonify({
+        "code": 200,
+        "msg": "查询成功",
+        "data": result
+    }), 200

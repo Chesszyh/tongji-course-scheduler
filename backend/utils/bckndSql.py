@@ -452,6 +452,96 @@ class bckndSql:
         result = self.cursor.fetchall()
 
         return result[0][0]
+    
+    def getAllRooms(self, calendarId):
+        '''
+        Get all rooms from teacher arrangeInfoText
+        '''
+        query = """
+        SELECT DISTINCT 
+            TRIM(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1)) as room
+        FROM teacher AS t
+        JOIN coursedetail AS c ON t.teachingClassid = c.id
+        WHERE c.calendarId = %s
+        AND t.arrangeInfoText IS NOT NULL 
+        AND t.arrangeInfoText != ''
+        AND TRIM(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1)) != ''
+        ORDER BY room
+        """
+        
+        self.cursor.execute(query, (calendarId,))
+        result = self.cursor.fetchall()
+        
+        # 过滤掉无效教室名称（只包含换行符等）
+        rooms = []
+        for room_tuple in result:
+            room = room_tuple[0].strip()
+            if room and room != '\n':
+                rooms.append(room)
+        
+        return rooms
+    
+    def getCoursesByRoom(self, room, calendarId):
+        '''
+        Get courses by room name
+        '''
+        query = """
+        SELECT DISTINCT
+            JSON_OBJECT(
+                'courseCode', c.courseCode,
+                'courseName', c.courseName,
+                'code', c.code,
+                'faculty', f.facultyI18n,
+                'credit', c.credit,
+                'campus', ca.campusI18n,
+                'teachers', teachers.teachers,
+                'arrangementInfo', teachers.arrangementInfo
+            )
+        FROM coursedetail as c
+        JOIN faculty as f ON f.faculty = c.faculty
+        JOIN campus as ca ON c.campus = ca.campus
+        JOIN (
+            SELECT 
+                t.teachingClassid,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'teacherCode', t.teacherCode,
+                        'teacherName', t.teacherName
+                    )
+                ) AS teachers,
+                t.arrangeInfoText AS arrangementInfo
+            FROM teacher AS t
+            WHERE t.arrangeInfoText LIKE %s
+            GROUP BY t.teachingClassid, t.arrangeInfoText
+        ) AS teachers ON c.id = teachers.teachingClassid
+        WHERE c.calendarId = %s
+        """
+        
+        room_pattern = f"%] {room}%"
+        self.cursor.execute(query, (room_pattern, calendarId))
+        
+        result = self.cursor.fetchall()
+        
+        # 解析JSON结果
+        courses = []
+        for course_json in result:
+            course_data = json.loads(course_json[0])
+            
+            # 解析排课信息
+            arrangement_info = []
+            if course_data['arrangementInfo']:
+                # 处理arrangeInfoText字符串
+                from .bckndTools import arrangementTextToObj, splitEndline
+                for location in splitEndline(course_data['arrangementInfo']):
+                    try:
+                        arrangement_info.append(arrangementTextToObj(location))
+                    except:
+                        pass
+            
+            course_data['arrangementInfo'] = arrangement_info
+            courses.append(course_data)
+        
+        return courses
 
 # testObject = {
 #     "calendarId": 119,

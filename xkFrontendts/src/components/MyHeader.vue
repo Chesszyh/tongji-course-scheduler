@@ -1,6 +1,18 @@
 <template>
     <a-layout-header class="flex flex-row justify-between items-center" style="background-color: #f6f8fa">
-        <div class="bg-[url(../assets/myLogo.png)] bg-cover bg-center h-10 w-50"></div>
+        <div class="flex flex-row items-center space-x-4">
+            <div class="bg-[url(../assets/myLogo.png)] bg-cover bg-center h-10 w-50"></div>
+            <a-menu v-model:selectedKeys="selectedKeys" mode="horizontal" style="background: transparent; border: none;" @select="onMenuSelect">
+                <a-menu-item key="schedule">
+                    <CalendarOutlined />
+                    个人课表
+                </a-menu-item>
+                <a-menu-item key="classroom">
+                    <HomeOutlined />
+                    教室课表
+                </a-menu-item>
+            </a-menu>
+        </div>
         <div class="float-right flex flex-row space-x-4">
             <div>
                 <a-dropdown>
@@ -65,7 +77,7 @@
 </template>
 
 <script lang="ts">
-import { ExportOutlined, GithubOutlined, CalendarOutlined, LinkOutlined, ReadOutlined } from '@ant-design/icons-vue';
+import { ExportOutlined, GithubOutlined, CalendarOutlined, LinkOutlined, ReadOutlined, HomeOutlined } from '@ant-design/icons-vue';
 import { codesToJsonForCSV, jsonToCSV, downloadCSV } from '@/utils/csvRelated';
 import { codesToJsonForXLS, jsonToXLS, downloadXLS } from '@/utils/xlsRelated';
 import { errorNotify } from '@/utils/errorNotify';
@@ -76,9 +88,20 @@ export default {
         GithubOutlined,
         ReadOutlined,
         LinkOutlined,
-        CalendarOutlined
+        CalendarOutlined,
+        HomeOutlined
+    },
+    emits: ['menu-change'],
+    data() {
+        return {
+            selectedKeys: ['schedule'] as string[]
+        };
     },
     methods: {
+        onMenuSelect({ key }: { key: string }) {
+            this.selectedKeys = [key];
+            this.$emit('menu-change', key);
+        },
         wakeUpCSV() {
             const csv = codesToJsonForCSV(this.$store.state.commonLists.selectedCourses, this.$store.state.commonLists.stagedCourses);
             const csvString = jsonToCSV(csv);

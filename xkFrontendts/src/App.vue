@@ -3,48 +3,60 @@
     <a-layout class="space-y-4">
       <!-- 所有 layout 放在了组件里, 不要嵌套! -->
       <a-spin :spinning="$store.state.isSpin" :indicator="myIndicator" tip="Loading..." size="large">  
-        <MyHeader />
-        <MajorInfo @changeMajor="resetSelectedRows" />
-        <a-layout class="main-content-layout">
-          <a-layout-content class="main-content">
-            <div class="flex flex-row space-x-4 h-max m-2">
-              <CourseRoughList @openOverview="handleOpen"/>
-              <CourseDetailList />
-            </div>
-            <TimeTable @cellClick="findCourseByTime" />
-          </a-layout-content>
-          
-          <!-- 右侧AI Chat边栏 -->
-          <a-layout-sider 
-            v-model:collapsed="aiSidebarCollapsed"
-            class="ai-chat-sider" 
-            :width="aiSidebarWidth" 
-            :collapsed-width="0"
-            theme="light"
-            :collapsible="true"
-            :trigger="null"
-            :breakpoint="breakpoint"
-            @breakpoint="onBreakpoint"
-          >
-            <AiChatSidebar v-if="!aiSidebarCollapsed" />
-          </a-layout-sider>
-        </a-layout>
+        <MyHeader @menu-change="onMenuChange" />
         
-        <!-- AI侧边栏切换按钮 -->
-        <a-button 
-          class="ai-sidebar-toggle"
-          :class="{ 'sidebar-open': !aiSidebarCollapsed }"
-          type="primary"
-          @click="toggleAiSidebar"
-          :title="aiSidebarCollapsed ? '显示AI助手' : '隐藏AI助手'"
-        >
-          <RobotOutlined v-if="aiSidebarCollapsed" />
-          <CloseOutlined v-else />
-          <span v-if="!aiSidebarCollapsed" class="ml-1">AI</span>
-        </a-button>
+        <!-- 个人课表视图 -->
+        <template v-if="currentView === 'schedule'">
+          <MajorInfo @changeMajor="resetSelectedRows" />
+          <a-layout class="main-content-layout">
+            <a-layout-content class="main-content">
+              <div class="flex flex-row space-x-4 h-max m-2">
+                <CourseRoughList @openOverview="handleOpen"/>
+                <CourseDetailList />
+              </div>
+              <TimeTable @cellClick="findCourseByTime" />
+            </a-layout-content>
+            
+            <!-- 右侧AI Chat边栏 -->
+            <a-layout-sider 
+              v-model:collapsed="aiSidebarCollapsed"
+              class="ai-chat-sider" 
+              :width="aiSidebarWidth" 
+              :collapsed-width="0"
+              theme="light"
+              :collapsible="true"
+              :trigger="null"
+              :breakpoint="breakpoint"
+              @breakpoint="onBreakpoint"
+            >
+              <AiChatSidebar v-if="!aiSidebarCollapsed" />
+            </a-layout-sider>
+          </a-layout>
+          
+          <!-- AI侧边栏切换按钮 -->
+          <a-button 
+            class="ai-sidebar-toggle"
+            :class="{ 'sidebar-open': !aiSidebarCollapsed }"
+            type="primary"
+            @click="toggleAiSidebar"
+            :title="aiSidebarCollapsed ? '显示AI助手' : '隐藏AI助手'"
+          >
+            <RobotOutlined v-if="aiSidebarCollapsed" />
+            <CloseOutlined v-else />
+            <span v-if="!aiSidebarCollapsed" class="ml-1">AI</span>
+          </a-button>
+        </template>
+        
+        <!-- 教室课表视图 -->
+        <template v-else-if="currentView === 'classroom'">
+          <ClassroomSchedulePage />
+        </template>
+        
         <MyFooter />
       </a-spin>
     </a-layout>
+    
+    <!-- 选课相关弹窗 -->
     <a-modal
     title="选择课程"
     okText="提交"
@@ -94,6 +106,7 @@ export default {
     CourseOverview: defineAsyncComponent(() => import('./components/CourseOverview.vue')),
     OptionalCourseTimeOverview: defineAsyncComponent(() => import('./components/OptionalCourseTimeOverview.vue')),
     AiChatSidebar: defineAsyncComponent(() => import('./components/AiChatSidebar.vue')),
+    ClassroomSchedulePage: defineAsyncComponent(() => import('./components/ClassroomSchedulePage.vue')),
     LoadingOutlined,
     RobotOutlined,
     CloseOutlined
@@ -108,7 +121,9 @@ export default {
       // AI侧边栏相关
       aiSidebarCollapsed: false,
       aiSidebarWidth: 400,
-      breakpoint: 'lg' as const
+      breakpoint: 'lg' as const,
+      // 当前视图
+      currentView: 'schedule' as 'schedule' | 'classroom'
     }
   },
   computed: {
@@ -122,6 +137,11 @@ export default {
     }
   },
   methods: {
+    // 视图切换方法
+    onMenuChange(view: string) {
+      this.currentView = view as 'schedule' | 'classroom';
+    },
+    
     // AI侧边栏控制方法
     toggleAiSidebar() {
       this.aiSidebarCollapsed = !this.aiSidebarCollapsed;

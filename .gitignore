@@ -5,6 +5,15 @@ __pycache__/
 node_modules/
 sqls/
 
+# local dev files
+*.env
 private/
 .idea/
 .vscode/
+
+# mkdocs
+site/
+docs/
+
+# private workflow files
+.github/prompts/
