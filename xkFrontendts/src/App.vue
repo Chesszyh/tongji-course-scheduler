@@ -16,14 +16,32 @@
           
           <!-- 右侧AI Chat边栏 -->
           <a-layout-sider 
+            v-model:collapsed="aiSidebarCollapsed"
             class="ai-chat-sider" 
-            :width="400" 
+            :width="aiSidebarWidth" 
+            :collapsed-width="0"
             theme="light"
-            :collapsible="false"
+            :collapsible="true"
+            :trigger="null"
+            :breakpoint="breakpoint"
+            @breakpoint="onBreakpoint"
           >
-            <AiChatSidebar />
+            <AiChatSidebar v-if="!aiSidebarCollapsed" />
           </a-layout-sider>
         </a-layout>
+        
+        <!-- AI侧边栏切换按钮 -->
+        <a-button 
+          class="ai-sidebar-toggle"
+          :class="{ 'sidebar-open': !aiSidebarCollapsed }"
+          type="primary"
+          @click="toggleAiSidebar"
+          :title="aiSidebarCollapsed ? '显示AI助手' : '隐藏AI助手'"
+        >
+          <RobotOutlined v-if="aiSidebarCollapsed" />
+          <CloseOutlined v-else />
+          <span v-if="!aiSidebarCollapsed" class="ml-1">AI</span>
+        </a-button>
         <MyFooter />
       </a-spin>
     </a-layout>
@@ -56,7 +74,7 @@ import zhCN from 'ant-design-vue/es/locale/zh_CN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import axios from 'axios';
-import { LoadingOutlined } from '@ant-design/icons-vue';
+import { LoadingOutlined, RobotOutlined, CloseOutlined } from '@ant-design/icons-vue';
 import { h } from 'vue';
 import { errorNotify } from './utils/errorNotify';
 import { getRowSection } from './utils/timetable';
@@ -76,7 +94,9 @@ export default {
     CourseOverview: defineAsyncComponent(() => import('./components/CourseOverview.vue')),
     OptionalCourseTimeOverview: defineAsyncComponent(() => import('./components/OptionalCourseTimeOverview.vue')),
     AiChatSidebar: defineAsyncComponent(() => import('./components/AiChatSidebar.vue')),
-    LoadingOutlined
+    LoadingOutlined,
+    RobotOutlined,
+    CloseOutlined
   },
   data() {
     return {
@@ -84,7 +104,11 @@ export default {
       selectedRowKeys: [] as string[],
       openOverview: false,
       openOptional: false,
-      optionalCourseData: []
+      optionalCourseData: [],
+      // AI侧边栏相关
+      aiSidebarCollapsed: false,
+      aiSidebarWidth: 400,
+      breakpoint: 'lg' as const
     }
   },
   computed: {
@@ -98,6 +122,18 @@ export default {
     }
   },
   methods: {
+    // AI侧边栏控制方法
+    toggleAiSidebar() {
+      this.aiSidebarCollapsed = !this.aiSidebarCollapsed;
+    },
+    
+    onBreakpoint(broken: boolean) {
+      if (broken) {
+        this.aiSidebarWidth = 300;
+      } else {
+        this.aiSidebarWidth = 400;
+      }
+    },
     handleOpen() {
       this.openOverview = true;
       // console.log("openOverview", this.openOverview);
@@ -277,12 +313,14 @@ export default {
 .main-content-layout {
   display: flex !important;
   flex-direction: row !important;
+  position: relative;
 }
 
 .main-content {
   flex: 1;
   overflow: hidden;
   padding: 0;
+  transition: margin-right 0.3s ease;
 }
 
 /* AI Chat 侧边栏样式 */
@@ -290,14 +328,63 @@ export default {
   background: #ffffff !important;
   border-left: 1px solid #e8e8e8;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.06);
-  height: calc(100vh - 200px); /* 根据页面头部高度调整 */
+  height: calc(100vh - 200px);
   position: sticky;
   top: 0;
+  z-index: 10;
+  transition: all 0.3s ease;
 }
 
 .ai-chat-sider .ant-layout-sider-children {
   height: 100%;
   overflow: hidden;
+}
+
+/* AI侧边栏切换按钮 */
+.ai-sidebar-toggle {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  z-index: 1000;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  overflow: hidden;
+}
+
+.ai-sidebar-toggle.sidebar-open {
+  border-radius: 8px;
+  width: auto;
+  padding: 0 16px;
+  min-width: 72px;
+}
+
+.ai-sidebar-toggle:hover {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.ai-sidebar-toggle .anticon {
+  font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.ai-sidebar-toggle .ml-1 {
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 当侧边栏展开时，调整按钮位置 */
+.ai-sidebar-toggle.sidebar-open {
+  right: 420px;
 }
 
 /* 确保主要内容区域能够正确缩放 */
@@ -311,11 +398,24 @@ export default {
   margin: 0;
 }
 
-/* 修复可能的响应式问题 */
-@media (max-width: 1400px) {
+/* 响应式设计 */
+@media (max-width: 1600px) {
   .ai-chat-sider {
     width: 350px !important;
     min-width: 350px !important;
+  }
+  .ai-sidebar-toggle.sidebar-open {
+    right: 370px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .ai-chat-sider {
+    width: 320px !important;
+    min-width: 320px !important;
+  }
+  .ai-sidebar-toggle.sidebar-open {
+    right: 340px;
   }
 }
 
@@ -323,6 +423,53 @@ export default {
   .ai-chat-sider {
     width: 300px !important;
     min-width: 300px !important;
+  }
+  .ai-sidebar-toggle.sidebar-open {
+    right: 320px;
+  }
+  
+  .ai-sidebar-toggle {
+    width: 48px;
+    height: 48px;
+    right: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ai-chat-sider {
+    position: fixed !important;
+    right: 0;
+    top: 0;
+    height: 100vh !important;
+    z-index: 1001;
+    width: 90vw !important;
+    min-width: 90vw !important;
+  }
+  
+  .ai-sidebar-toggle {
+    right: 10px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* 侧边栏动画效果 */
+.ai-chat-sider.ant-layout-sider-collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+}
+
+/* 暗黑模式支持 */
+@media (prefers-color-scheme: dark) {
+  .ai-chat-sider {
+    background: #1f1f1f !important;
+    border-left-color: #303030;
+  }
+  
+  .ai-sidebar-toggle {
+    background: #1890ff;
+    color: white;
   }
 }
 </style>
