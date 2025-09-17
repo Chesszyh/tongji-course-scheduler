@@ -42,5 +42,8 @@ export default defineConfig({
       }
     }
   },
-  base: process.env.NODE_ENV === 'production' ? '/' : '/'
+  base: process.env.NODE_ENV === 'production' ? '/' : '/',
+  preview: {
+    allowedHosts: ['course.neurosama.uk']
+  }
 })
