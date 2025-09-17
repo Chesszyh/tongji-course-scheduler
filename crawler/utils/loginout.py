@@ -20,6 +20,7 @@ IMAP_SERVER = CONFIG["IMAP"]["server_domain"]
 IMAP_PORT = CONFIG["IMAP"]["server_port"]
 IMAP_USERNAME =  CONFIG["IMAP"]["qq_emailaddr"]
 IMAP_PASSWORD =  CONFIG["IMAP"]["qq_grantcode"]
+MANUAL_LOGIN = False
 
 # 登录
 def login():
@@ -104,14 +105,20 @@ def login():
     while True:
         try:
             if is_enhance:
-                time.sleep(sleep_time)  # 等待 30 秒
-
-                with imap_email.EmailVerifier(IMAP_USERNAME, IMAP_PASSWORD, IMAP_SERVER, IMAP_PORT) as v:
-                    code = v.get_latest_verification_code()
-                    if code:
-                        print(code)
-                    else:
-                        raise Exception("登录失败！未找到验证码")
+                if MANUAL_LOGIN:
+                    # 手动输入验证码
+                    code = input("请输入邮箱验证码: ")
+                    if not code:
+                        raise Exception("登录失败！验证码不能为空")
+                else:
+                    # 自动获取验证码
+                    time.sleep(sleep_time)  # 等待 30 秒
+                    with imap_email.EmailVerifier(IMAP_USERNAME, IMAP_PASSWORD, IMAP_SERVER, IMAP_PORT) as v:
+                        code = v.get_latest_verification_code()
+                        if code:
+                            print(code)
+                        else:
+                            raise Exception("登录失败！未找到验证码")
 
                 login_data = urlencode({
                 "j_username": myEncrypt.STU_NO,

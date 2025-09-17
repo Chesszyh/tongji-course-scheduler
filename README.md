@@ -254,3 +254,13 @@ npm run build # Compile and Minify for Production
 ```
 
 Then you can access the application at `http://localhost:5173`.
+
+## Personal Note
+
+- branch:
+  - custom: 保留了小的修改，包括config路径、手动登陆等，readme比master稍晚一点
+  - master: 撤销了config修改，保留了手动登陆，readme最新
+
+以后如果还能用得到这个仓库，就仔细读一下db ddl定义，以及其他代码，重新提pr.
+
+另外，`npm run build`有隐式any类型检查报错，可能需要修改。

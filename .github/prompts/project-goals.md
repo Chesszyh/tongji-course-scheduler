@@ -1,0 +1,16 @@
+---
+mode: agent
+---
+Define the task to achieve, including specific requirements, constraints, and success criteria.
+
+本项目是一个正在开发的项目，用于爬取同济大学教学管理系统课程信息并模拟选课的完整解决方案，包含数据抓取、后端API服务和前端用户界面三个核心模块。项目旨在帮助学生更好地进行课程规划和选课决策。本项目仍在继续开发，接下来的目标包括：
+
+## AI Agent's TODO
+
+接下来，请你首先完成以下任务的**Vue前端界面**（后端暂时无须完成）：
+
+- [ ] 在整个右侧边栏添加：类似[vscode copilot chat](https://github.com/microsoft/vscode-copilot-chat)的界面
+  - [ ] 上方：展示当前选中课程对应老师的[乌龙茶](https://1.tongji.icu/)评价（可能为空）
+    - 注：“乌龙茶”是同济大学学生自发创建的一个教师评价系统，用户可以在该平台上查看和分享对任课教师的评价和评分。
+    - [ ] 乌龙茶的接口可能不兼容我的项目，因此我打算用mkdocs+github pages搭建一个简单的镜像站，定期从乌龙茶爬取数据并更新。
+  - [ ] 下方：对话框，用户可以询问ai获得课程推荐的老师和原因，或者让AI根据课程信息和评价自动完成排课，并说明理由

@@ -4,3 +4,7 @@ cookies.json
 __pycache__/
 node_modules/
 sqls/
+
+private/
+.idea/
+.vscode/
