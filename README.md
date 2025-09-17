@@ -30,9 +30,9 @@ Then, you should prepare a local mysql database. For example, if you are using D
 docker pull mysql
 docker run -d \
   --name mysql \
-  -e MYSQL_ROOT_PASSWORD=your_password \
+  -e MYSQL_ROOT_PASSWORD=... \
   -e MYSQL_DATABASE=tongji_course \
-  -p 3306:3306 \
+  -p 127.0.0.1:3306:3306 \
   -v ~/mysql-data:/var/lib/mysql \
   mysql
 ```
@@ -189,6 +189,15 @@ CREATE TABLE `fetchlog` (
 ```
 </details>
 
+Optionally, you can also create a common(Read-only) user for the application to use:
+
+```sql
+CREATE USER 'tj_user'@'%' IDENTIFIED BY 'strong_password';
+GRANT SELECT ON tongji_course.* TO 'tj_user'@'%';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
 ### crawler
 
 To make login function possible, you need to add a `config.ini` file at `./crawler`, which includes your student ID and password in clear text:
@@ -208,10 +217,10 @@ qq_grantcode = your_grant_code # You need to enable IMAP in QQ Mail settings and
 [Sql]
 host = 127.0.0.1
 user = root
-password = 
-# should be different in production  
-r_user = root  
-r_password = 
+password = root_password
+# user and r_user should be different in production  
+r_user = tj_user
+r_password = read_only_user_password
 database = tongji_course
 port = 3306
 charset = utf8mb4
@@ -249,8 +258,16 @@ flask run --port=1239
 
 # Start the frontend
 cd ../xkFrontendts
-npm run dev   # Compile and Hot-Reload for Development
-npm run build # Compile and Minify for Production
+
+# Development mode (with hot-reload)
+npm run dev # local access 
+npm run dev:host -- --port 5173 # external access
+
+# Compile and Minify for Production
+npm run build
+npm run build:skip-check # skip type checking to speed up build
+npm run preview:host -- --port 5173
+
 ```
 
 Then you can access the application at `http://localhost:5173`.
@@ -260,7 +277,5 @@ Then you can access the application at `http://localhost:5173`.
 - branch:
   - custom: 保留了小的修改，包括config路径、手动登陆等，readme比master稍晚一点
   - master: 撤销了config修改，保留了手动登陆，readme最新
+    - 直接基于原项目进行个人二次开发
 
-以后如果还能用得到这个仓库，就仔细读一下db ddl定义，以及其他代码，重新提pr.
-
-另外，`npm run build`有隐式any类型检查报错，可能需要修改。

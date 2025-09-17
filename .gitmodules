@@ -1,3 +1,0 @@
-[submodule "wlc_backend"]
-	path = wlc_backend
-	url = https://github.com/SJTU-jCourse/jcourse_api

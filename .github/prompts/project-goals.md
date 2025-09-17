@@ -7,10 +7,21 @@ Define the task to achieve, including specific requirements, constraints, and su
 
 ## AI Agent's TODO
 
-接下来，请你首先完成以下任务的**Vue前端界面**（后端暂时无须完成）：
+接下来，请你首先完成以下任务的**Vue前端界面**（标注为“已完成 [x]”的内容是之前AI Agent做过的，你无须再重复完成）：
 
-- [ ] 在整个右侧边栏添加：类似[vscode copilot chat](https://github.com/microsoft/vscode-copilot-chat)的界面
-  - [ ] 上方：展示当前选中课程对应老师的[乌龙茶](https://1.tongji.icu/)评价（可能为空）
+- [x] 在整个右侧边栏添加：类似[vscode copilot chat](https://github.com/microsoft/vscode-copilot-chat)的界面
+  - [x] 上方：展示当前选中课程对应老师的[乌龙茶](https://1.tongji.icu/)评价（可能为空）
     - 注：“乌龙茶”是同济大学学生自发创建的一个教师评价系统，用户可以在该平台上查看和分享对任课教师的评价和评分。
-    - [ ] 乌龙茶的接口可能不兼容我的项目，因此我打算用mkdocs+github pages搭建一个简单的镜像站，定期从乌龙茶爬取数据并更新。
-  - [ ] 下方：对话框，用户可以询问ai获得课程推荐的老师和原因，或者让AI根据课程信息和评价自动完成排课，并说明理由
+    - 乌龙茶的接口可能不兼容我的项目，因此我打算用mkdocs+github pages搭建一个简单的镜像站，定期从乌龙茶爬取数据并更新。
+  - [x] 下方：对话框，用户可以询问ai获得课程推荐的老师和原因，或者让AI根据课程信息和评价自动完成排课，并说明理由
+
+---
+
+- [x] 添加“教室课表”功能：
+  - 可以自由选择教室，查看该教室的课程安排
+    - 直接利用项目已经写好的课表前端界面即可
+  - 只要是课程信息中出现过的教室，都要出现在课表里
+  - 有关“课程信息”，你可以参考项目代码的SQL表定义、爬虫部分代码等等
+
+---
+

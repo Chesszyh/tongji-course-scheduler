@@ -15,5 +15,3 @@ private/
 site/
 docs/
 
-# private workflow files
-.github/prompts/
