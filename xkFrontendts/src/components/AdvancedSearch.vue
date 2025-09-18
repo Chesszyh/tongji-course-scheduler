@@ -144,7 +144,7 @@ export default {
 
             try {
                 const searchData = { ...this.searchBody } as any;
-                for (let key in searchData) {
+                for (const key in searchData) {
                     if (searchData[key] === undefined) {
                         searchData[key] = '';
                     }

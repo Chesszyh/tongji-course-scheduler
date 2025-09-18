@@ -1,5 +1,5 @@
-import { message } from 'ant-design-vue';
+import { message } from "ant-design-vue";
 
 export function errorNotify(msg: string) {
-    message.error(msg);
+  message.error(msg);
 }
