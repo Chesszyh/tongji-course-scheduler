@@ -27,7 +27,8 @@ export default defineConfig({
         target: 'http://localhost:1239',
         changeOrigin: true,
       }
-    }
+    },
+    allowedHosts: ['course.neurosama.uk']
   },
   build: {
     outDir: 'dist',
