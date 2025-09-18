@@ -6,8 +6,11 @@ import email
 import re
 from bs4 import BeautifulSoup
 
+
 class EmailVerifier:
-    def __init__(self, email_addr: str, grant_code: str, imap_server: str, imap_port: str):
+    def __init__(
+        self, email_addr: str, grant_code: str, imap_server: str, imap_port: str
+    ):
         """
         Initialize XlEmail class.
         email_addr is the email address, while
@@ -21,14 +24,14 @@ class EmailVerifier:
         self.imap_server = imap_server
         self.imap_port = imap_port
         self.mailbox = None  # IMAP connect object
-    
+
     def __enter__(self):
         """
         Auto connect.
         """
         self.connect()
         return self
-    
+
     def __exit__(self, exc_type, exc_value, traceback):
         """
         Auto close.
@@ -45,14 +48,16 @@ class EmailVerifier:
 
     def get_latest_verification_code(self):
         """
-        Get the most recent unread verification email, 
+        Get the most recent unread verification email,
         and extract verification code.
         """
         if self.mailbox is None:
             self.connect()
-        
+
         # Search unread verification email, criteria is title
-        search_criteria = '(UNSEEN SUBJECT "加强认证验证码通知")'.encode('utf-8')  # because Chinese chars are contained, encode is a MUST
+        search_criteria = '(UNSEEN SUBJECT "加强认证验证码通知")'.encode(
+            "utf-8"
+        )  # because Chinese chars are contained, encode is a MUST
         result, data = self.mailbox.search(None, search_criteria)
 
         if data[0]:  # Is not none
@@ -68,9 +73,9 @@ class EmailVerifier:
             match = re.search(r"验证码：(\d{6})", mail_content)
             if match:
                 return match.group(1)
-            
+
         return None  # Verification code not found
-    
+
     def _get_email_content(self, msg: email.message.Message):
         """
         Analyse email content.
@@ -81,20 +86,23 @@ class EmailVerifier:
             for part in msg.walk():
                 content_type = part.get_content_type()
                 if content_type in {"text/plain", "text/html"}:
-                    content = part.get_payload(decode=True).decode("utf-8", errors="ignore")
+                    content = part.get_payload(decode=True).decode(
+                        "utf-8", errors="ignore"
+                    )
                     break
         else:
             content = msg.get_payload(decode=True).decode("utf-8", errors="ignore")
 
         # If HTML, to plaintext
         return self._extract_from_html(content) if "<html" in content else content
+
     def _extract_from_html(self, html: str):
         """
         Use bs4 to extract plaintext in html content.
         """
         soup = BeautifulSoup(html, "html.parser")
         return soup.get_text()
-    
+
     def close(self):
         if self.mailbox:
             self.mailbox.logout()

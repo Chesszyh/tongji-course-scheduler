@@ -18,9 +18,10 @@ CONFIG.read("config.ini")
 # 加强认证
 IMAP_SERVER = CONFIG["IMAP"]["server_domain"]
 IMAP_PORT = CONFIG["IMAP"]["server_port"]
-IMAP_USERNAME =  CONFIG["IMAP"]["qq_emailaddr"]
-IMAP_PASSWORD =  CONFIG["IMAP"]["qq_grantcode"]
+IMAP_USERNAME = CONFIG["IMAP"]["qq_emailaddr"]
+IMAP_PASSWORD = CONFIG["IMAP"]["qq_grantcode"]
 MANUAL_LOGIN = False
+
 
 # 登录
 def login():
@@ -29,11 +30,11 @@ def login():
     entry_url = "https://1.tongji.edu.cn/api/ssoservice/system/loginIn"
 
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        'Accept-Language': 'zh-CN,zh;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Referer': 'https://1.tongji.edu.cn/',
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Referer": "https://1.tongji.edu.cn/",
     }
 
     session = requests.Session()
@@ -41,38 +42,44 @@ def login():
     response = session.get(entry_url)
 
     # 获取 authnLcKey
-    authnLcKey = response.url.split('=')[-1] # 从 URL 中提取 authnLcKey，从后往前找到第一个等号，取等号后的部分
+    authnLcKey = response.url.split("=")[
+        -1
+    ]  # 从 URL 中提取 authnLcKey，从后往前找到第一个等号，取等号后的部分
     # print(authnLcKey)
 
     # ----- 第二步：ActionAuthChain ----- #
 
     # 获取 RSA 公钥所在 js 文件的链接
-    for line in response.text.split('\n'):
-        if 'crypt.js' in line:
-            RSA_URL = "https://iam.tongji.edu.cn/idp/" + line.split('src=\"')[1].split('\"')[0]
+    for line in response.text.split("\n"):
+        if "crypt.js" in line:
+            RSA_URL = (
+                "https://iam.tongji.edu.cn/idp/" + line.split('src="')[1].split('"')[0]
+            )
             print(RSA_URL)
 
     CHAIN_URL = response.url
 
     SP_AUTH_CHAIN_CODE = myEncrypt.getspAuthChainCode(response.text)
 
-    login_data = urlencode({
-        "j_username": myEncrypt.STU_NO,
-        "j_password": myEncrypt.encryptPassword(RSA_URL),
-        "j_checkcode": "请输入验证码",
-        "op": "login",
-        "spAuthChainCode": SP_AUTH_CHAIN_CODE, # 似乎是个固定值，写死在页面的 
-        "authnLcKey": authnLcKey,
-    })
+    login_data = urlencode(
+        {
+            "j_username": myEncrypt.STU_NO,
+            "j_password": myEncrypt.encryptPassword(RSA_URL),
+            "j_checkcode": "请输入验证码",
+            "op": "login",
+            "spAuthChainCode": SP_AUTH_CHAIN_CODE,  # 似乎是个固定值，写死在页面的
+            "authnLcKey": authnLcKey,
+        }
+    )
 
     # 发送登录请求
     session.headers.update(
         {
             # 'Referer': response.url, # 设置 Referer
             # 'Host': 'iam.tongji.edu.cn', # 设置 Host
-            'Origin': 'https://iam.tongji.edu.cn', # 设置 Origin
-            'Content-Length': str(len(login_data)), # 设置 Content-Length
-            'Content-Type': 'application/x-www-form-urlencoded', # 设置 Content-Type
+            "Origin": "https://iam.tongji.edu.cn",  # 设置 Origin
+            "Content-Length": str(len(login_data)),  # 设置 Content-Length
+            "Content-Type": "application/x-www-form-urlencoded",  # 设置 Content-Type
         }
     )
     response = session.post(CHAIN_URL, data=login_data, allow_redirects=False)
@@ -87,17 +94,22 @@ def login():
     print(response.text)
     # input()
 
-    if response_xml.find('loginFailed').text != 'false':
+    if response_xml.find("loginFailed").text != "false":
         is_enhance = True  # 是加强认证
 
         # 发送验证码
-        veri_data = urlencode({
-            "j_username": myEncrypt.STU_NO,
-            "type": "email" #  邮箱是 email，短信是 sms
-        })  # 格式是 form_data
+        veri_data = urlencode(
+            {
+                "j_username": myEncrypt.STU_NO,
+                "type": "email",  #  邮箱是 email，短信是 sms
+            }
+        )  # 格式是 form_data
 
-        session.post("https://iam.tongji.edu.cn/idp/sendCheckCode.do",
-                        data=veri_data, allow_redirects=False)
+        session.post(
+            "https://iam.tongji.edu.cn/idp/sendCheckCode.do",
+            data=veri_data,
+            allow_redirects=False,
+        )
 
         sleep_time = 30
         failed_time = 0
@@ -113,54 +125,70 @@ def login():
                 else:
                     # 自动获取验证码
                     time.sleep(sleep_time)  # 等待 30 秒
-                    with imap_email.EmailVerifier(IMAP_USERNAME, IMAP_PASSWORD, IMAP_SERVER, IMAP_PORT) as v:
+                    with imap_email.EmailVerifier(
+                        IMAP_USERNAME, IMAP_PASSWORD, IMAP_SERVER, IMAP_PORT
+                    ) as v:
                         code = v.get_latest_verification_code()
                         if code:
                             print(code)
                         else:
                             raise Exception("登录失败！未找到验证码")
 
-                login_data = urlencode({
-                "j_username": myEncrypt.STU_NO,
-                "type": "email",
-                "sms_checkcode": code,
-                "popViewException": "Pop2",
-                "j_checkcode": "请输入验证码",
-                "op": "login",
-                "spAuthChainCode": SP_AUTH_CHAIN_CODE, # 似乎是个固定值，写死在页面的
-                })
+                login_data = urlencode(
+                    {
+                        "j_username": myEncrypt.STU_NO,
+                        "type": "email",
+                        "sms_checkcode": code,
+                        "popViewException": "Pop2",
+                        "j_checkcode": "请输入验证码",
+                        "op": "login",
+                        "spAuthChainCode": SP_AUTH_CHAIN_CODE,  # 似乎是个固定值，写死在页面的
+                    }
+                )
 
-                response = session.post(CHAIN_URL, data=login_data, allow_redirects=False)
+                response = session.post(
+                    CHAIN_URL, data=login_data, allow_redirects=False
+                )
 
             # ----- 第三步：AuthnEngine ----- #
 
             if is_enhance:
-                auth_url = "https://iam.tongji.edu.cn/idp/AuthnEngine?currentAuth=urn_oasis_names_tc_SAML_2.0_ac_classes_SMSUsernamePassword&authnLcKey=" + authnLcKey + "&entityId=SYS20230001"
+                auth_url = (
+                    "https://iam.tongji.edu.cn/idp/AuthnEngine?currentAuth=urn_oasis_names_tc_SAML_2.0_ac_classes_SMSUsernamePassword&authnLcKey="
+                    + authnLcKey
+                    + "&entityId=SYS20230001"
+                )
             else:  # Not enhance
-                auth_url = "https://iam.tongji.edu.cn/idp/AuthnEngine?currentAuth=urn_oasis_names_tc_SAML_2.0_ac_classes_BAMUsernamePassword&authnLcKey=" + authnLcKey + "&entityId=SYS20230001"
+                auth_url = (
+                    "https://iam.tongji.edu.cn/idp/AuthnEngine?currentAuth=urn_oasis_names_tc_SAML_2.0_ac_classes_BAMUsernamePassword&authnLcKey="
+                    + authnLcKey
+                    + "&entityId=SYS20230001"
+                )
 
             response = session.post(auth_url, data=login_data, allow_redirects=False)
 
             # ----- 第四步：SSO 登录 ----- #
 
-            sso_url = response.headers['Location']
-            
+            sso_url = response.headers["Location"]
+
             # 有必要更新 headers
             sso_headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Accept-Language": "zh-CN,zh;q=0.9",
+                "Accept-Encoding": "gzip, deflate, br, zstd",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             }
-            
-            session.headers.clear() # 记得清空 headers，因为有 Content-Type 等不需要的字段
+
+            session.headers.clear()  # 记得清空 headers，因为有 Content-Type 等不需要的字段
             session.headers.update(sso_headers)
 
             response = session.get(sso_url, allow_redirects=False)
 
             # ----- 第五步：LoginIn code & state----- #
 
-            loginIn_url = response.headers['Location']  # 如果给的验证码不正确, 这里不会有 Location 属性
+            loginIn_url = response.headers[
+                "Location"
+            ]  # 如果给的验证码不正确, 这里不会有 Location 属性
 
             response = session.get(loginIn_url, allow_redirects=False)
 
@@ -173,40 +201,40 @@ def login():
             if failed_time > 5:
                 print("登录失败，尝试次数过多")
                 return None
-    
 
     # ----- 第六步：ssologin token----- #
 
-    ssologin_url = response.headers['Location']
+    ssologin_url = response.headers["Location"]
 
     response = session.get(ssologin_url, allow_redirects=False)
 
     # ----- 第七步：转 HTTPS ----- #
 
-    https_url = response.headers['Location']
+    https_url = response.headers["Location"]
 
     response = session.get(https_url, allow_redirects=False)
 
     global AES_URL
 
     # 提取 AES 公钥的链接
-    for line in response.text.split('>'): # 混淆过的，没有换行符
-        if '/static/js/app.' in line:
+    for line in response.text.split(">"):  # 混淆过的，没有换行符
+        if "/static/js/app." in line:
             # print(line)
-            AES_URL = "https://1.tongji.edu.cn" + line.split('src=')[1].split('>')[0] # 提取链接 
+            AES_URL = (
+                "https://1.tongji.edu.cn" + line.split("src=")[1].split(">")[0]
+            )  # 提取链接
             print(AES_URL)
-
 
     # ----- 第八步：https://1.tongji.edu.cn/api/sessionservice/session/login ----- #
 
     login_url = "https://1.tongji.edu.cn/api/sessionservice/session/login"
 
     # 准备数据，提取 ssologin 链接中的参数
-    url_params = ssologin_url.split('?')[1].split('&') # 先用 ? 分割，再用 & 分割
+    url_params = ssologin_url.split("?")[1].split("&")  # 先用 ? 分割，再用 & 分割
     login_req_body = {
-        "token": url_params[0].split('=')[1], # 用 = 分割
-        "ts": url_params[2].split('=')[1],
-        "uid": url_params[1].split('=')[1]
+        "token": url_params[0].split("=")[1],  # 用 = 分割
+        "ts": url_params[2].split("=")[1],
+        "uid": url_params[1].split("=")[1],
     }
 
     # 发送请求
@@ -217,7 +245,7 @@ def login():
     if response.status_code == 200:
         print("登录成功！")
         # print("当前链接", response.url) # 输出 URL
-        print(session.cookies) # 输出 cookies
+        print(session.cookies)  # 输出 cookies
         # print(session.headers) # 输出 headers
         return session
     else:
@@ -225,33 +253,36 @@ def login():
         return None
 
 
-
 def logout(session):
     logout_data = {
-        "sessionid": session.cookies.get_dict()['sessionid'],
-        "uid": myEncrypt.STU_NO
+        "sessionid": session.cookies.get_dict()["sessionid"],
+        "uid": myEncrypt.STU_NO,
     }
 
     logout_data = json.dumps(logout_data, separators=(",", ":"))
 
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        'Accept-Language': 'zh-CN,zh;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Accept': 'application/json, text/plain, */*',
-        'Origin': 'https://1.tongji.edu.cn/',        
-        'Referer': 'https://1.tongji.edu.cn/workbench',        
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://1.tongji.edu.cn/",
+        "Referer": "https://1.tongji.edu.cn/workbench",
         "Content-Type": "application/json",
-        "Content-Length": str(len(logout_data),),
+        "Content-Length": str(
+            len(logout_data),
+        ),
     }
 
     session.headers.update(headers)
 
     print(headers)
 
-    response = session.post("https://1.tongji.edu.cn/api/sessionservice/session/logout", data=logout_data)
+    response = session.post(
+        "https://1.tongji.edu.cn/api/sessionservice/session/logout", data=logout_data
+    )
 
-    if (response.status_code == 200):
+    if response.status_code == 200:
         print("退出登录成功！")
     else:
         print("退出登录失败！")
