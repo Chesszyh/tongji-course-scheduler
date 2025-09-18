@@ -4,12 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:host": "vite --host 0.0.0.0",
-    "build": "run-p type-check \"build-only {@}\" --",
-    "build:skip-check": "vite build",
-    "preview": "vite preview",
-    "preview:host": "vite preview --host 0.0.0.0",
+    "dev": "vite --host 0.0.0.0",
+    "dev:localhost": "vite",
+    "build": "vite build",
+    "build:check": "npm run type-check && vite build",
+    "serve": "vite preview",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix"
   },
