@@ -1,5 +1,9 @@
 from utils import bckndSql
-from utils.bckndTools import arrangementTextToObj, splitEndline, optCourseQueryListGenerator
+from utils.bckndTools import (
+    arrangementTextToObj,
+    splitEndline,
+    optCourseQueryListGenerator,
+)
 from flask import Flask, request, jsonify
 import configparser
 from datetime import datetime
@@ -7,18 +11,25 @@ from datetime import datetime
 app = Flask(__name__)
 
 CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini', encoding='utf-8')
+CONFIG.read("config.ini", encoding="utf-8")
 
-IS_DEBUG = CONFIG['Switch']['debug'] # 1 / 0
+IS_DEBUG = CONFIG["Switch"]["debug"]  # 1 / 0
 
 # 全局变量
 
-LABEL_LIST = [ "通识选修课", "人文经典与审美素养", "科学探索与生命关怀", "社会发展与国际视野", "工程能力与创新思维" ] # 选修课标签，写死
+LABEL_LIST = [
+    "通识选修课",
+    "人文经典与审美素养",
+    "科学探索与生命关怀",
+    "社会发展与国际视野",
+    "工程能力与创新思维",
+]  # 选修课标签，写死
 INNER_LABEL_LIST = [811, 829, 830, 831, 832, 855, 940, 947, 955, 956, 957, 958]
 
-@app.route('/api/getAllCalendar', methods=['GET'])
+
+@app.route("/api/getAllCalendar", methods=["GET"])
 def getAllCalendar():
-    '''
+    """
     Get all calendar.
 
     Response:
@@ -41,20 +52,17 @@ def getAllCalendar():
         ]
     }
     ```
-    '''
+    """
 
     with bckndSql.bckndSql() as sql:
         result = sql.getAllCalendar()
-    
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
 
-@app.route('/api/getAllCampus', methods=['GET'])
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
+
+
+@app.route("/api/getAllCampus", methods=["GET"])
 def getAllCampus():
-    '''
+    """
     Get all campus.
 
     Response:
@@ -74,20 +82,17 @@ def getAllCampus():
         ]
     }
     ```
-    '''
+    """
 
     with bckndSql.bckndSql() as sql:
         result = sql.getAllCampus()
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
-@app.route('/api/getAllFaculty', methods=['GET'])
+
+@app.route("/api/getAllFaculty", methods=["GET"])
 def getAllFaculty():
-    '''
+    """
     Get all faculty.
 
     Response:
@@ -114,20 +119,17 @@ def getAllFaculty():
         ]
     }
     ```
-    '''
+    """
 
     with bckndSql.bckndSql() as sql:
         result = sql.getAllFaculty()
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
-@app.route('/api/findGradeByCalendarId', methods=['POST'])
+
+@app.route("/api/findGradeByCalendarId", methods=["POST"])
 def findGradeByCalendarId():
-    '''
+    """
     Find grade by calendarId.
 
     Payload:
@@ -147,24 +149,19 @@ def findGradeByCalendarId():
         }
     }
     ```
-    '''
+    """
 
     payload = request.json
 
     with bckndSql.bckndSql() as sql:
-        result = sql.findGradeByCalendarId(payload['calendarId'])
+        result = sql.findGradeByCalendarId(payload["calendarId"])
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": {
-            "gradeList": result
-        }
-    }), 200
+    return jsonify({"code": 200, "msg": "查询成功", "data": {"gradeList": result}}), 200
 
-@app.route('/api/findMajorByGrade', methods=['POST'])
+
+@app.route("/api/findMajorByGrade", methods=["POST"])
 def findMajorByGrade():
-    '''
+    """
     Find major by grade.
 
     Payload:
@@ -194,22 +191,19 @@ def findMajorByGrade():
             ]
         }
         ```
-    '''
+    """
 
     payload = request.json
 
     with bckndSql.bckndSql() as sql:
-        result = sql.findMajorByGrade(payload['grade'])
+        result = sql.findMajorByGrade(payload["grade"])
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
-@app.route('/api/findCourseByMajor', methods=['POST'])
+
+@app.route("/api/findCourseByMajor", methods=["POST"])
 def findCourseByMajor():
-    '''
+    """
     Find course by major.
 
     Payload:
@@ -317,55 +311,54 @@ def findCourseByMajor():
         ]
     }
     ```
-    '''
+    """
 
     payload = request.json
 
     with bckndSql.bckndSql() as sql:
-        result = sql.findCourseByMajor(payload['grade'], payload['code'], payload['calendarId'])
+        result = sql.findCourseByMajor(
+            payload["grade"], payload["code"], payload["calendarId"]
+        )
 
     # 处理 result 中的 locations 字段
     # 由于 locations 字段是一个字符串，需要转换为数组
     # 形如：关佶红(05222) 星期一3-4节 [1-17] 南129\n关佶红(05222) 星期三3-4节 [1-17单] 北301\n
 
     for res in result:
-        for course in res['courses']:
-            course['arrangementInfo'] = []
+        for course in res["courses"]:
+            course["arrangementInfo"] = []
 
-            for location in splitEndline(course['locations']):
-                course['arrangementInfo'].append(arrangementTextToObj(location))
+            for location in splitEndline(course["locations"]):
+                course["arrangementInfo"].append(arrangementTextToObj(location))
 
-            del course['locations']
+            del course["locations"]
 
     # 对于 code 相同的课程，合并 arrangementInfo
 
     for res in result:
-        res['courses'] = sorted(res['courses'], key=lambda x: x['code']) # 先排序
+        res["courses"] = sorted(res["courses"], key=lambda x: x["code"])  # 先排序
 
         # 合并相同课号的课程
         merged_courses = []
         current_course = None
 
-        for course in res['courses']:
-            if not current_course or current_course['code'] != course['code']:
+        for course in res["courses"]:
+            if not current_course or current_course["code"] != course["code"]:
                 merged_courses.append(course)
                 current_course = course
             else:
                 # 如果arrangementInfo不同，则合并
-                if current_course['arrangementInfo'] != course['arrangementInfo']:
-                    current_course['arrangementInfo'].extend(course['arrangementInfo'])
+                if current_course["arrangementInfo"] != course["arrangementInfo"]:
+                    current_course["arrangementInfo"].extend(course["arrangementInfo"])
 
-        res['courses'] = merged_courses
+        res["courses"] = merged_courses
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
-@app.route('/api/findOptionalCourseType', methods=['POST'])
+
+@app.route("/api/findOptionalCourseType", methods=["POST"])
 def findOptionalCourseType():
-    '''
+    """
     Find optional course type.
 
     Payload
@@ -406,22 +399,19 @@ def findOptionalCourseType():
         ]
     }
     ```
-    '''
+    """
 
     payload = request.json
 
     with bckndSql.bckndSql() as sql:
-        result = sql.findOptionalCourseType(LABEL_LIST, payload['calendarId'])
+        result = sql.findOptionalCourseType(LABEL_LIST, payload["calendarId"])
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
-@app.route('/api/findCourseByNatureId', methods=['POST'])
+
+@app.route("/api/findCourseByNatureId", methods=["POST"])
 def findCourseByNatureId():
-    '''
+    """
     Find course by nature id.
 
     Payload：
@@ -515,34 +505,36 @@ def findCourseByNatureId():
             },
 
             // ...
-            
+
         ]
     }
     ```
-    '''
+    """
 
     payload = request.json
 
     # 字段合法性检验
-    for id in payload['ids']:
+    for id in payload["ids"]:
         if id not in INNER_LABEL_LIST:
-            return jsonify({
-                "code": 400,
-                "msg": "目前只支持查询选修课标签",
-            }), 400
+            return (
+                jsonify(
+                    {
+                        "code": 400,
+                        "msg": "目前只支持查询选修课标签",
+                    }
+                ),
+                400,
+            )
 
     with bckndSql.bckndSql() as sql:
-        result = sql.findCourseByNatureId(payload['ids'], payload['calendarId'])
+        result = sql.findCourseByNatureId(payload["ids"], payload["calendarId"])
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
-@app.route('/api/findCourseDetailByCode', methods=['POST'])
+
+@app.route("/api/findCourseDetailByCode", methods=["POST"])
 def findCourseDetailByCode():
-    '''
+    """
     Find course detail by code.
 
     Payload：
@@ -595,60 +587,56 @@ def findCourseDetailByCode():
             },
 
             // ...
-            
+
         ]}
     }
     ```
-    '''
+    """
 
     payload = request.json
 
     with bckndSql.bckndSql() as sql:
-        result = sql.findCourseDetailByCode(payload['courseCode'], payload['calendarId'])
+        result = sql.findCourseDetailByCode(
+            payload["courseCode"], payload["calendarId"]
+        )
 
     # 处理 result 中的 locations 字段
     # 由于 locations 字段是一个字符串，需要转换为数组
     # 形如：关佶红(05222) 星期一3-4节 [1-17] 南129\n关佶红(05222) 星期三3-4节 [1-17单] 北301\n
 
     for course in result:
-        course['arrangementInfo'] = []
+        course["arrangementInfo"] = []
 
-        for location in splitEndline(course['locations']):
-            course['arrangementInfo'].append(arrangementTextToObj(location))
+        for location in splitEndline(course["locations"]):
+            course["arrangementInfo"].append(arrangementTextToObj(location))
 
-        del course['locations']
+        del course["locations"]
 
     # 对于 code 相同的课程，合并 arrangementInfo
-    
-    result = sorted(result, key=lambda x: x['code']) # 先排序
+
+    result = sorted(result, key=lambda x: x["code"])  # 先排序
 
     # 合并相同课号的课程
     merged_result = []
     current_course = None
 
     for course in result:
-        if not current_course or current_course['code'] != course['code']:
+        if not current_course or current_course["code"] != course["code"]:
             merged_result.append(course)
             current_course = course
         else:
             # 如果arrangementInfo不同，则合并
-            if current_course['arrangementInfo'] != course['arrangementInfo']:
-                current_course['arrangementInfo'].extend(course['arrangementInfo'])
+            if current_course["arrangementInfo"] != course["arrangementInfo"]:
+                current_course["arrangementInfo"].extend(course["arrangementInfo"])
 
     result = merged_result
 
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
-
-
-@app.route('/api/findCourseBySearch', methods=['POST'])
+@app.route("/api/findCourseBySearch", methods=["POST"])
 def findCourseBySearch():
-    '''
+    """
     Find course by search.
 
     Payload：
@@ -699,17 +687,22 @@ def findCourseBySearch():
         }
     }
     ```
-    '''
+    """
 
     payload = request.json
 
     # 字段合法性检验，要求 Payload 中 calendarId 不为空
-    if not payload['calendarId']:
-        return jsonify({
-            "code": 400,
-            "msg": "请指定 calendarId",
-        }), 400
-    
+    if not payload["calendarId"]:
+        return (
+            jsonify(
+                {
+                    "code": 400,
+                    "msg": "请指定 calendarId",
+                }
+            ),
+            400,
+        )
+
     # 至少有 2 个字段不为空
     # filledCnt = 0
     # for key in payload:
@@ -721,25 +714,27 @@ def findCourseBySearch():
     #         "code": 400,
     #         "msg": "请至少指定两个查询条件",
     #     }), 400
-        
 
     sizeLimit = 100
 
     with bckndSql.bckndSql() as sql:
         result = sql.findCourseBySearch(payload, sizeLimit)
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": {
-            "courses": result,
-            "sizeLimit": sizeLimit
-        }
-    }), 200
+    return (
+        jsonify(
+            {
+                "code": 200,
+                "msg": "查询成功",
+                "data": {"courses": result, "sizeLimit": sizeLimit},
+            }
+        ),
+        200,
+    )
 
-@app.route('/api/findCourseByTime', methods=['POST'])
+
+@app.route("/api/findCourseByTime", methods=["POST"])
 def findCourseByTime():
-    '''
+    """
     Find course by time.
 
     Payload：
@@ -778,32 +773,30 @@ def findCourseByTime():
     }
     ```
     接口太慢了，一天 100 门课的数据量，需要 40s 左右，需要优化
-    '''
+    """
 
     payload = request.json
 
-    queryStr = optCourseQueryListGenerator(payload['day'], payload['section'])
+    queryStr = optCourseQueryListGenerator(payload["day"], payload["section"])
 
     if queryStr == None:
-        return jsonify({
-            "code": 400,
-            "msg": "输入参数有误",
-            "data": []
-        }), 400
+        return jsonify({"code": 400, "msg": "输入参数有误", "data": []}), 400
 
     with bckndSql.bckndSql() as sql:
-        result = sql.findCourseByTime(queryStr, INNER_LABEL_LIST, payload['calendarId']) # 返回的是这一天的所有课程，需要再过滤一
+        result = sql.findCourseByTime(
+            # 返回的是这一天的所有课程，需要再过滤一
+            queryStr,
+            INNER_LABEL_LIST,
+            payload["calendarId"],
+        )
         print(len(result))
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
-@app.route('/api/getLatestUpdateTime', methods=['GET'])
+
+@app.route("/api/getLatestUpdateTime", methods=["GET"])
 def getLatestUpdateTime():
-    '''
+    """
     Get latest update time.
 
     Response:
@@ -815,20 +808,26 @@ def getLatestUpdateTime():
         "data": "2025-02-25"
     }
     ```
-    '''
+    """
 
     with bckndSql.bckndSql() as sql:
         result = sql.getLatestUpdateTime()
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": datetime.strftime(result, "%Y-%m-%d")
-    }), 200
+    return (
+        jsonify(
+            {
+                "code": 200,
+                "msg": "查询成功",
+                "data": datetime.strftime(result, "%Y-%m-%d"),
+            }
+        ),
+        200,
+    )
 
-@app.route('/api/getAllRooms', methods=['POST'])
+
+@app.route("/api/getAllRooms", methods=["POST"])
 def getAllRooms():
-    '''
+    """
     Get all available rooms.
 
     Payload:
@@ -842,33 +841,35 @@ def getAllRooms():
     ```json
     {
         "code": 200,
-        "msg": "查询成功", 
+        "msg": "查询成功",
         "data": ["北214", "南129", "A楼101", ...]
     }
     ```
-    '''
+    """
 
     payload = request.json
 
     # 字段合法性检验
-    if not payload.get('calendarId'):
-        return jsonify({
-            "code": 400,
-            "msg": "请指定 calendarId",
-        }), 400
+    if not payload.get("calendarId"):
+        return (
+            jsonify(
+                {
+                    "code": 400,
+                    "msg": "请指定 calendarId",
+                }
+            ),
+            400,
+        )
 
     with bckndSql.bckndSql() as sql:
-        result = sql.getAllRooms(payload['calendarId'])
+        result = sql.getAllRooms(payload["calendarId"])
 
-    return jsonify({
-        "code": 200,
-        "msg": "查询成功",
-        "data": result
-    }), 200
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
-@app.route('/api/getCoursesByRoom', methods=['POST'])
+
+@app.route("/api/getCoursesByRoom", methods=["POST"])
 def getCoursesByRoom():
-    '''
+    """
     Get courses by room name.
 
     Payload:
@@ -912,22 +913,209 @@ def getCoursesByRoom():
         ]
     }
     ```
-    '''
+    """
 
     payload = request.json
 
     # 字段合法性检验
-    if not payload.get('calendarId') or not payload.get('room'):
-        return jsonify({
-            "code": 400,
-            "msg": "请指定 calendarId 和 room",
-        }), 400
+    if not payload.get("calendarId") or not payload.get("room"):
+        return (
+            jsonify(
+                {
+                    "code": 400,
+                    "msg": "请指定 calendarId 和 room",
+                }
+            ),
+            400,
+        )
 
     with bckndSql.bckndSql() as sql:
-        result = sql.getCoursesByRoom(payload['room'], payload['calendarId'])
+        result = sql.getCoursesByRoom(payload["room"], payload["calendarId"])
 
-    return jsonify({
+    return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
+
+
+@app.route("/api/getStudyRoomSuggestions", methods=["POST"])
+def getStudyRoomSuggestions():
+    """
+    Get study room suggestions based on criteria.
+
+    Payload:
+    ```json
+    {
+        "campus": "四平路校区",
+        "building": "安楼",  // 可选
+        "dayOfWeek": 1,     // 1-7, 星期一到星期日
+        "startTime": 6,     // 开始节次
+        "endTime": 11,      // 结束节次
+        "calendarId": 119
+    }
+    ```
+
+    Response:
+    ```json
+    {
         "code": 200,
         "msg": "查询成功",
-        "data": result
-    }), 200
+        "data": {
+            "suggestions": [
+                {
+                    "room": "安楼A205",
+                    "campus": "四平路校区",
+                    "freePeriods": [
+                        {
+                            "start": 6,
+                            "end": 11,
+                            "duration": 6
+                        }
+                    ],
+                    "isFullyFree": true
+                },
+                {
+                    "room": "安楼A204",
+                    "campus": "四平路校区",
+                    "freePeriods": [
+                        {
+                            "start": 6,
+                            "end": 9,
+                            "duration": 4
+                        }
+                    ],
+                    "isFullyFree": false
+                }
+            ],
+            "summary": {
+                "totalRooms": 50,
+                "availableRooms": 15,
+                "fullyFreeRooms": 8
+            }
+        }
+    }
+    ```
+    """
+
+    payload = request.json
+
+    required_fields = ["campus", "dayOfWeek", "startTime", "endTime", "calendarId"]
+    for field in required_fields:
+        if field not in payload or payload[field] is None:
+            return (
+                jsonify(
+                    {
+                        "code": 400,
+                        "msg": f"请指定 {field}",
+                    }
+                ),
+                400,
+            )
+
+    if (
+        payload["startTime"] < 1
+        or payload["endTime"] > 12
+        or payload["startTime"] > payload["endTime"]
+    ):
+        return (
+            jsonify(
+                {
+                    "code": 400,
+                    "msg": "时间范围无效，请选择1-12节课的有效范围",
+                }
+            ),
+            400,
+        )
+
+    if payload["dayOfWeek"] < 1 or payload["dayOfWeek"] > 7:
+        return (
+            jsonify(
+                {
+                    "code": 400,
+                    "msg": "星期数无效，请选择1-7",
+                }
+            ),
+            400,
+        )
+
+    with bckndSql.bckndSql() as sql:
+        suggestions = sql.getStudyRoomSuggestions(
+            payload["campus"],
+            payload.get("building"),  # 可选参数
+            payload["dayOfWeek"],
+            payload["startTime"],
+            payload["endTime"],
+            payload["calendarId"],
+        )
+
+    # 生成汇总信息
+    total_rooms = len(suggestions)
+    available_rooms = len([s for s in suggestions if s["freePeriods"]])
+    fully_free_rooms = len([s for s in suggestions if s["isFullyFree"]])
+
+    # 按推荐程度排序：完全空闲的在前，然后按可用时长排序
+    suggestions.sort(
+        key=lambda x: (
+            -int(x["isFullyFree"]),  # 完全空闲的排前面
+            -sum(period["duration"] for period in x["freePeriods"]),  # 按总可用时长排序
+            x["room"],  # 最后按教室名称排序
+        )
+    )
+
+    return (
+        jsonify(
+            {
+                "code": 200,
+                "msg": "查询成功",
+                "data": {
+                    "suggestions": suggestions,
+                    "summary": {
+                        "totalRooms": total_rooms,
+                        "availableRooms": available_rooms,
+                        "fullyFreeRooms": fully_free_rooms,
+                    },
+                },
+            }
+        ),
+        200,
+    )
+
+
+@app.route("/api/getAllBuildings", methods=["POST"])
+def getAllBuildings():
+    """
+    Get all buildings in a specific campus.
+
+    Payload:
+    ```json
+    {
+        "campus": "四平路校区",
+        "calendarId": 119
+    }
+    ```
+
+    Response:
+    ```json
+    {
+        "code": 200,
+        "msg": "查询成功",
+        "data": ["安楼", "北楼", "南楼", "综合楼"]
+    }
+    ```
+    """
+
+    payload = request.json
+
+    # 字段合法性检验
+    if not payload.get("campus") or not payload.get("calendarId"):
+        return (
+            jsonify(
+                {
+                    "code": 400,
+                    "msg": "请指定 campus 和 calendarId",
+                }
+            ),
+            400,
+        )
+
+    with bckndSql.bckndSql() as sql:
+        buildings = sql.getAllBuildings(payload["campus"], payload["calendarId"])
+
+    return jsonify({"code": 200, "msg": "查询成功", "data": buildings}), 200
