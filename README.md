@@ -264,14 +264,15 @@ flask run --port=1239
 cd ../xkFrontendts
 
 # Development mode (with hot-reload)
-npm run dev # local access 
-npm run dev:host -- --port 5173 # external access
+npm run dev             # global access, start on 5173
+npm run dev:localhost   # local access, start on localhost:5173
 
 # Compile and Minify for Production
-npm run build
-npm run build:skip-check # skip type checking to speed up build
-npm run preview:host -- --port 5173
+npm run build           # skip type checking to speed up build
+npm run build:check     # with type checking
 
+# Production mode
+npm run serve           # will start on localhost:4173
 ```
 
 Then you can access the application at `http://localhost:5173`.
