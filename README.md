@@ -1,5 +1,9 @@
 # TONGJI-COURSE-SCHEDULER
 
+## Archived(来自原作者)
+
+不再打算开发。未来可以提升的空间是，在数据库表的属性中添加爬取编号，从而便于同步 1 系统数据库的内容。
+
 ## Preparation
 
 Download the project, at root folder, run: 
@@ -272,7 +276,7 @@ npm run preview:host -- --port 5173
 
 Then you can access the application at `http://localhost:5173`.
 
-## Personal Note
+## Personal Note(Fork Author)
 
 - branch:
   - custom: 保留了小的修改，包括config路径、手动登陆等，readme比master稍晚一点
