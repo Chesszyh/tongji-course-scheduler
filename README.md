@@ -277,5 +277,5 @@ Then you can access the application at `http://localhost:5173`.
 - branch:
   - custom: 保留了小的修改，包括config路径、手动登陆等，readme比master稍晚一点
   - master: 撤销了config修改，保留了手动登陆，readme最新
-    - 直接基于原项目进行个人二次开发
+    - 直接基于原项目进行个人二次开发，详见`CHANGE_LOG.md`。
 

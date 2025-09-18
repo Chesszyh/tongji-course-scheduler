@@ -8,3 +8,5 @@
 
 ## TODO
 
+- Create 1.tongji.icu mirror site using MkDocs + GitHub Pages.
+- Merge wlc info into course-scheduler project.
