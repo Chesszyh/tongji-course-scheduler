@@ -57,7 +57,7 @@ def analyze_classroom_distribution():
         WHERE t.arrangeInfoText IS NOT NULL 
         AND t.arrangeInfoText != ''
         """
-        
+
         sql_helper.cursor.execute(query)
         results = sql_helper.cursor.fetchall()
         print(f"总共获取到 {len(results)} 条课程安排记录")

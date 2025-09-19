@@ -565,18 +565,36 @@ class bckndSql:
     ):
         """
         Get study room suggestions based on criteria
+        Updated for NOTE2: Only returns allowed study areas
         """
-        from study_room_config import is_room_blacklisted, get_building_priority, normalize_building_name
+        from study_room_config import (
+            CAMPUS_MAPPING, CAMPUS_ID_TO_NAME,
+            is_allowed_classroom,
+            filter_study_area_classrooms
+        )
 
-        campus_condition = "AND ca.campusI18n = %s" if campus else ""
+        # 将campus参数转换为校区ID（如果需要）
+        campus_id = None
+        if campus in CAMPUS_ID_TO_NAME:
+            campus_id = campus
+        else:
+            # 通过名称查找ID
+            for cid, cname in CAMPUS_ID_TO_NAME.items():
+                if cname == campus:
+                    campus_id = cid
+                    break
+
+        campus_condition = "AND c.campus = %s" if campus_id else ""
         building_condition = ""
         specific_room_condition = ""
 
+        # 如果指定了楼宇，添加模糊匹配条件
         if building:
             building_condition = (
                 "AND (TRIM(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1)) LIKE %s)"
             )
 
+        # 如果指定了具体教室且不是"All"，添加精确匹配条件
         if specificRoom and specificRoom != 'All':
             specific_room_condition = (
                 "AND TRIM(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1)) = %s"
@@ -585,15 +603,13 @@ class bckndSql:
         # 查询所有在指定校区的教室
         rooms_query = f"""
         SELECT DISTINCT 
-            TRIM(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1)) as room,
-            ca.campusI18n as campus
+            TRIM(REPLACE(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1), '\n', '')) as room,
+            c.campus as campus_id
         FROM teacher AS t
-        JOIN coursedetail AS c ON t.teachingClassid = c.id
-        JOIN campus AS ca ON c.campus = ca.campus
+        JOIN coursedetail AS c ON t.teachingClassId = c.id
         WHERE c.calendarId = %s
-        AND t.arrangeInfoText IS NOT NULL 
-        AND t.arrangeInfoText != ''
-        AND TRIM(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1)) != ''
+        AND TRIM(REPLACE(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1), '\n', '')) IS NOT NULL 
+        AND TRIM(REPLACE(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1), '\n', '')) != ''
         {campus_condition}
         {building_condition}
         {specific_room_condition}
@@ -601,8 +617,8 @@ class bckndSql:
         """
 
         params = [calendarId]
-        if campus:
-            params.append(campus)
+        if campus_id:
+            params.append(campus_id)
         if building:
             params.append(f"{building}%")
         if specificRoom and specificRoom != 'All':
@@ -611,25 +627,46 @@ class bckndSql:
         self.cursor.execute(rooms_query, tuple(params))
         rooms_result = self.cursor.fetchall()
 
-        all_rooms = [room[0] for room in rooms_result]
+        all_rooms_data = []
+        for room_row in rooms_result:
+            room_name = room_row[0]
+            room_campus_id = str(room_row[1])
+            all_rooms_data.append({
+                'classroom_name': room_name,
+                'campus_id': room_campus_id
+            })
 
         # 调试输出
         print(
-            f"[DEBUG] getStudyRoomSuggestions: Found {len(all_rooms)} rooms before filtering")
+            f"[DEBUG] getStudyRoomSuggestions: Found {len(all_rooms_data)} rooms before filtering")
+
+        # 使用新配置过滤出允许的自习区域教室
+        filtered_rooms_data = []
+        for room_data in all_rooms_data:
+            room_name = room_data['classroom_name']
+            room_campus_id = room_data['campus_id']
+
+            # 检查是否属于允许的自习区域
+            validation_result = is_allowed_classroom(room_name, room_campus_id)
+            if validation_result['is_allowed']:
+                room_data.update({
+                    'campus_name': validation_result['campus'],
+                    'building_name': validation_result['building'],
+                    'building_code': validation_result['building_code']
+                })
+                filtered_rooms_data.append(room_data)
+
+        print(
+            f"[DEBUG] After study area filtering: {len(filtered_rooms_data)} allowed rooms")
 
         # 分析每个教室的占用情况
         room_suggestions = []
-        filtered_count = 0
 
-        for room in all_rooms:
-            # 检查教室是否在黑名单中
-            if is_room_blacklisted(room):
-                filtered_count += 1
-                print(f"[DEBUG] Filtered blacklisted room: {room}")
-                continue
+        for room_data in filtered_rooms_data:
+            room_name = room_data['classroom_name']
 
             occupied_times = self._getRoomOccupiedTimes(
-                room, dayOfWeek, calendarId)
+                room_name, dayOfWeek, calendarId)
             free_periods = self._calculateFreePeriods(
                 occupied_times, startTime, endTime
             )
@@ -637,34 +674,43 @@ class bckndSql:
             if free_periods:
                 room_suggestions.append(
                     {
-                        "room": room,
-                        "campus": (
-                            rooms_result[all_rooms.index(room)][1]
-                            if rooms_result
-                            else campus
-                        ),
+                        "room": room_name,
+                        "campus": room_data.get('campus_name', CAMPUS_ID_TO_NAME.get(room_data['campus_id'], 'Unknown')),
+                        "building": room_data.get('building_name', ''),
+                        "building_code": room_data.get('building_code', ''),
                         "freePeriods": free_periods,
                         "isFullyFree": len(free_periods) == 1
                         and free_periods[0]["start"] == startTime
                         and free_periods[0]["end"] == endTime,
+                        "totalFreeDuration": sum(period["duration"] for period in free_periods)
                     }
                 )
+
+        # 按总空闲时长和教室名称排序（不再使用优先级）
+        room_suggestions.sort(
+            key=lambda x: (-x["totalFreeDuration"], x["room"]))
+
+        print(f"[DEBUG] Final suggestions: {len(room_suggestions)} rooms")
 
         return room_suggestions
 
     def _getRoomOccupiedTimes(self, room, dayOfWeek, calendarId):
         """
         Get occupied time periods for a specific room on a specific day
+        Updated to handle room names with newlines and different formats
         """
         query = """
         SELECT DISTINCT t.arrangeInfoText
         FROM teacher AS t
-        JOIN coursedetail AS c ON t.teachingClassid = c.id
+        JOIN coursedetail AS c ON t.teachingClassId = c.id
         WHERE c.calendarId = %s
         AND t.arrangeInfoText LIKE %s
         """
 
-        room_pattern = f"%] {room}%"
+        # 转义room名称并创建匹配模式
+        room_escaped = room.replace('%', '\\%').replace('_', '\\_')
+        room_pattern = f"%] {room_escaped}%"
+
         self.cursor.execute(query, (calendarId, room_pattern))
         arrangements = self.cursor.fetchall()
 
@@ -736,84 +782,107 @@ class bckndSql:
     def getAllBuildings(self, campus, calendarId):
         """
         Get all buildings in a specific campus with room grouping
+        Updated for NOTE2: Only returns allowed study areas
         Returns a hierarchical structure: building -> rooms
         """
-        from study_room_config import normalize_building_name, get_building_priority, is_room_blacklisted
+        from study_room_config import (
+            CAMPUS_MAPPING, CAMPUS_ID_TO_NAME,
+            filter_study_area_classrooms,
+            get_campus_buildings,
+            is_allowed_classroom
+        )
+
+        # 将campus参数转换为校区ID（如果需要）
+        campus_id = None
+        if campus in CAMPUS_ID_TO_NAME:
+            campus_id = campus
+        else:
+            # 通过名称查找ID
+            for cid, cname in CAMPUS_ID_TO_NAME.items():
+                if cname == campus:
+                    campus_id = cid
+                    break
 
         query = """
         SELECT DISTINCT 
-            TRIM(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1)) as full_room_info,
-            SUBSTRING_INDEX(TRIM(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1)), ' ', 1) as building_raw
+            TRIM(REPLACE(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1), '\n', '')) as full_room_info
         FROM teacher AS t
-        JOIN coursedetail AS c ON t.teachingClassid = c.id
-        JOIN campus AS ca ON c.campus = ca.campus
+        JOIN coursedetail AS c ON t.teachingClassId = c.id
         WHERE c.calendarId = %s
-        AND ca.campusI18n = %s
+        AND c.campus = %s
         AND t.arrangeInfoText IS NOT NULL 
         AND t.arrangeInfoText != ''
-        AND TRIM(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1)) != ''
+        AND TRIM(REPLACE(SUBSTRING_INDEX(t.arrangeInfoText, '] ', -1), '\n', '')) != ''
         ORDER BY full_room_info
         """
 
-        self.cursor.execute(query, (calendarId, campus))
+        self.cursor.execute(query, (calendarId, campus_id or campus))
         result = self.cursor.fetchall()
 
         # 调试输出：原始查询结果
         print(
-            f"[DEBUG] getAllBuildings for campus '{campus}', calendarId {calendarId}")
+            f"[DEBUG] getAllBuildings for campus '{campus}' (ID: {campus_id}), calendarId {calendarId}")
         print(f"[DEBUG] Raw query returned {len(result)} rooms")
 
-        # 分析和分组教室信息
-        building_rooms = {}
-        filtered_count = 0
-
+        # 提取教室名称列表
+        all_classrooms = []
         for row in result:
             full_room_info = str(row[0]).strip() if row[0] else ""
-            building_raw = str(row[1]).strip() if row[1] else ""
+            if full_room_info and len(full_room_info) <= 50:  # 过滤异常数据
+                all_classrooms.append(full_room_info)
 
-            if not full_room_info or len(full_room_info) > 50:  # 过滤异常数据
-                continue
+        print(f"[DEBUG] After filtering, got {len(all_classrooms)} classrooms")
 
-            # 检查教室是否在黑名单中
-            if is_room_blacklisted(full_room_info):
-                filtered_count += 1
-                print(
-                    f"[DEBUG] Filtered out blacklisted room: {full_room_info}")
-                continue
+        # 使用新配置过滤出允许的自习区域教室
+        filtered_classrooms = filter_study_area_classrooms(all_classrooms)
 
-            # 提取楼宇名称
-            building_name = normalize_building_name(building_raw)
-            room_name = full_room_info
+        print(
+            f"[DEBUG] After study area filtering, got {len(filtered_classrooms)} allowed classrooms")
 
-            if building_name:
-                if building_name not in building_rooms:
-                    building_rooms[building_name] = {
-                        'building': building_name,
-                        'rooms': set(),  # 使用set避免重复
-                        'priority': get_building_priority(building_name)
-                    }
-                building_rooms[building_name]['rooms'].add(room_name)
+        # 按楼宇分组
+        building_rooms = {}
+
+        for classroom_data in filtered_classrooms:
+            classroom_name = classroom_data['classroom_name']
+            building_name = classroom_data['building_name']
+            building_code = classroom_data['building_code']
+
+            if building_name not in building_rooms:
+                building_rooms[building_name] = {
+                    'building': building_name,
+                    'building_code': building_code,
+                    'rooms': set(),  # 使用set避免重复
+                    'campus_name': classroom_data['campus_name']
+                }
+            building_rooms[building_name]['rooms'].add(classroom_name)
 
         # 转换为最终格式并排序
         buildings = []
         for building_name, building_info in building_rooms.items():
             rooms_list = sorted(list(building_info['rooms']))
+            # 在每个楼宇的教室列表开头添加"All"选项
+            rooms_with_all = ["All"] + rooms_list
+
             buildings.append({
                 'building': building_name,
-                'rooms': rooms_list,
-                'roomCount': len(rooms_list),
-                'priority': building_info['priority']
+                'building_code': building_info['building_code'],
+                'rooms': rooms_with_all,
+                'roomCount': len(rooms_list),  # 不包括"All"的实际教室数量
+                'campus_name': building_info['campus_name']
             })
 
-        # 按优先级和名称排序
-        buildings.sort(key=lambda x: (x['priority'], x['building']))
+        # 按楼宇名称排序（不再使用优先级）
+        buildings.sort(key=lambda x: x['building'])
 
         # 调试输出：处理后的结果
-        print(f"[DEBUG] Filtered out {filtered_count} blacklisted rooms")
-        print(f"[DEBUG] Processed into {len(buildings)} buildings:")
+        print(
+            f"[DEBUG] Final result: {len(buildings)} allowed study buildings:")
         for building in buildings:
             print(
-                f"[DEBUG]   {building['building']}: {building['roomCount']} rooms (priority: {building['priority']})")
+                f"[DEBUG]   {building['building']} ({building['building_code']}): {building['roomCount']} rooms")
+            if building['roomCount'] <= 5:  # 如果教室数量少，显示具体教室
+                # 跳过"All"
+                print(f"[DEBUG]     Rooms: {', '.join(building['rooms'][1:])}")
 
         return buildings
 
@@ -850,21 +919,21 @@ class bckndSql:
 # debug
 if __name__ == "__main__":
     testObject = {
-      "calendarId": 119,
-      "courseName": "上海",
-      "courseCode": "",
-      "teacherCode": "",
-      "teacherName": "",
-      "campus": "",
-      "faculty": "",
+        "calendarId": 119,
+        "courseName": "上海",
+        "courseCode": "",
+        "teacherCode": "",
+        "teacherName": "",
+        "campus": "",
+        "faculty": "",
     }
     with bckndSql() as db:
         print(db.findCourseDetailByCode("124004", 119))
-        print(db.findCourseByMajor(2023, "10065", 119)) # ok
+        print(db.findCourseByMajor(2023, "10065", 119))  # ok
         print(db.findGradeByCalendarId(119))
         print(db.findMajorByGrade(2023))
-        print(db.findCourseBySearch(testObject)) # ok
-        print(db.findCourseDetailByCode("124004", 119)) # ok
+        print(db.findCourseBySearch(testObject))  # ok
+        print(db.findCourseDetailByCode("124004", 119))  # ok
         print(db.findCourseByNatureId([955, 956, 957, 958, 947], 119))
         print(db.findOptionalCourseType([955, 956, 957, 958, 947], 119))
         print(len(db.findCourseByTime(

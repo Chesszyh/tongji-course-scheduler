@@ -1,160 +1,305 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 自习室推荐系统配置文件
-包含楼宇优先级、教室黑名单等配置
+根据NOTE2要求，取消优先级机制，只支持指定的自习区域
 """
 
-# 楼宇优先级配置（数字越小优先级越高）
-BUILDING_PRIORITY = {
-    # 因为在选择楼宇之前已经对校区进行了分类，所以两校区楼宇优先级可以顺延
-    # 只定义了四平/嘉定的优先级，其他校区不清楚
-    '安楼': 1,      # 设备最新，开放到0:30，最适合自习
-    '博楼': 2,      # 开放到21:40，时间短但条件也不错
-    '广楼': 3,      # 设备有换新，现在电源多了不少
-    '诚楼': 4,      # 同样是开放时间短
-    '复楼': 5,      # 大阶梯教室多，电源少，开放到22:00左右？
-    '南楼': 10,      # 设备新，电源多
-    '北楼': 11,      # 北楼也可以，但我很久没去过了
-    'A楼': 1,       # 别名映射
-    'B楼': 2,
-    'G楼': 3
+import re
+
+# 允许的自习区域定义
+ALLOWED_STUDY_AREAS = {
+    '嘉定校区': {
+        '安楼': {
+            'pattern': re.compile(r'^安楼A[1-4]\d{2}'),  # 安楼A1xx-A4xx
+            'code': 'A',
+            'description': '嘉定校区安楼',
+            'comment': "设备最新，开放到0:30，最适合自习"
+        },
+        '博楼': {
+            'pattern': re.compile(r'^博楼B[1-4]\d{2}'),  # 博楼B1xx-B4xx
+            'code': 'B',
+            'description': '嘉定校区博楼',
+            "comment": "开放到21:40，时间短但条件也不错"
+        },
+        '广楼': {
+            'pattern': re.compile(r'^广楼G[1-4]\d{2}'),  # 广楼G1xx-G4xx
+            'code': 'G',
+            'description': '嘉定校区广楼',
+            "comment": "设备有换新，现在电源多了不少"
+        },
+        '复楼': {
+            'pattern': re.compile(r'^复楼F[1-4]\d{2}'),  # 复楼F1xx-F4xx
+            'code': 'F',
+            'description': '嘉定校区复楼',
+            "comment": "大阶梯教室多，电源少，开放到22:00左右？"
+        }
+    },
+    '四平路校区': {
+        '南楼': {
+            'pattern': re.compile(r'^南[1-4]\d{2}'),  # 南1xx-南4xx
+            'code': '南',
+            'description': '四平路校区南楼',
+            "comment": "设备新，电源多"
+        },
+        '北楼': {
+            'pattern': re.compile(r'^北[1-4]\d{2}'),  # 北1xx-北4xx
+            'code': '北',
+            'description': '四平路校区北楼',
+            "comment": "北楼也可以，但我很久没去过了"
+        }
+    },
+    '沪西校区': {
+        '二教': {
+            'pattern': re.compile(r'^沪西二教\d+[^,，\s]*'),  # 沪西二教xxx，xxx为数字+描述
+            'code': '沪西二教',
+            'description': '沪西校区二教'
+        }
+    }
 }
 
-# HACK 教室白名单机制？避免以后每次上游系统更新都要调整新的黑名单
-
-# 教室黑名单配置（不适合自习的教室，或者接口有错的特判）
-ROOM_BLACKLIST = {
-    # 按关键词过滤
-    'keywords': [
-        # '机房',   # 济事楼机房，其实也不是不行
-        '实验室',  
-        '实验',
-        '机械',    
-        '化学',    
-        '物理',    
-        '生物',    
-        '材料',    
-        '电气',    
-        '自动化',  
-        '工程',    
-        '制图',    
-        '学院安排',
-        '不排教室'
-    ],
-
-    # 按具体教室名称过滤
-    'specific_rooms': [
-        # 可以添加具体的教室名称
-        # 例如：'A101机房', 'B203实验室'
-    ],
+# 校区到数据库字段的映射 (基于数据库中campus字段)
+CAMPUS_MAPPING = {
+    '四平路校区': '1',
+    '嘉定校区': '3',
+    '沪西校区': '4'
 }
 
-# 楼宇名称标准化映射
-BUILDING_NAME_MAPPING = {
-    'A': '安楼',
-    'B': '博楼',
-    'C': 'C楼',
-    'D': 'D楼',
-    'E': 'E楼',
-    'F': 'F楼',
-    'G': 'G楼',
-    'H': 'H楼',
-    'J': 'J楼',
-    'K': 'K楼',
-    'L': 'L楼',
-    'M': 'M楼',
-    'N': '南楼',
-    'S': '南楼',
-    'Bei': '北楼',
-    'Nan': '南楼',
-    '北': '北楼',
-    '南': '南楼',
-    '安': '安楼',
-    '博': '博楼',
-    '综合': '综合楼',
-    '图书': '图书馆',
-    '实验': '实验楼',
-    '教学': '教学楼'
-}
+# 反向映射：数据库字段到校区名称
+CAMPUS_ID_TO_NAME = {v: k for k, v in CAMPUS_MAPPING.items()}
 
-# 推荐算法权重配置
-RECOMMENDATION_WEIGHTS = {
-    'priority_weight': 0.4,        # 楼宇优先级权重
-    'availability_weight': 0.5,    # 可用时长权重
-    'distance_weight': 0.1         # 距离权重（暂未实现）
-}
+# ============================================================================
+# 辅助函数
+# ============================================================================
 
 
-def is_room_blacklisted(room_name):
+def is_allowed_classroom(classroom_name, campus_id=None):
     """
-    检查教室是否在黑名单中
+    检查教室是否属于允许的自习区域
 
     Args:
-        room_name (str): 教室名称
+        classroom_name (str): 教室名称，如 'A101', '南208'等
+        campus_id (str, optional): 校区ID，用于进一步验证
 
     Returns:
-        bool: True if blacklisted, False otherwise
+        dict: 包含验证结果的字典，格式如下：
+        {
+            'is_allowed': bool,           # 是否允许
+            'campus': str,                # 校区名称
+            'building': str,              # 楼宇名称  
+            'building_code': str,         # 楼宇代码
+            'reason': str                 # 验证结果说明
+        }
     """
-    room_name_lower = room_name.lower()
 
-    # 检查关键词 - 具体教室名称
-    for keyword in ROOM_BLACKLIST['keywords']:
-        if keyword in room_name or keyword.lower() in room_name_lower:
-            return True
+    if not classroom_name:
+        return {
+            'is_allowed': False,
+            'campus': '',
+            'building': '',
+            'building_code': '',
+            'reason': '教室名称为空'
+        }
 
-    # 检查黑名单
-    if room_name in ROOM_BLACKLIST['specific_rooms']:
-        return True
+    classroom_name = classroom_name.strip()
 
-    return False
+    # 遍历所有允许的自习区域
+    for campus_name, buildings in ALLOWED_STUDY_AREAS.items():
+        for building_name, building_info in buildings.items():
+            if building_info['pattern'].match(classroom_name):
+                # 如果提供了campus_id，需要验证是否匹配
+                if campus_id and CAMPUS_MAPPING.get(campus_name) != str(campus_id):
+                    continue
 
-def is_room_whitelisted(room_name)
+                return {
+                    'is_allowed': True,
+                    'campus': campus_name,
+                    'building': building_name,
+                    'building_code': building_info['code'],
+                    'reason': f'符合{building_info["description"]}的格式要求'
+                }
 
-def get_building_priority(building_name):
+    return {
+        'is_allowed': False,
+        'campus': '',
+        'building': '',
+        'building_code': '',
+        'reason': f'教室 {classroom_name} 不属于允许的自习区域'
+    }
+
+
+def get_building_from_classroom(classroom_name):
     """
-    获取楼宇优先级
+    从教室名称中提取楼宇信息
 
     Args:
-        building_name (str): 楼宇名称
+        classroom_name (str): 教室名称
 
     Returns:
-        int: 优先级数字（越小优先级越高）
+        dict: 包含楼宇信息的字典，如果不是允许的自习区域则返回None
     """
-    return BUILDING_PRIORITY.get(building_name, 99)  # 未知楼宇优先级最低
+    result = is_allowed_classroom(classroom_name)
+
+    if result['is_allowed']:
+        return {
+            'campus': result['campus'],
+            'building': result['building'],
+            'building_code': result['building_code']
+        }
+
+    return None
 
 
-def normalize_building_name(raw_building):
+def filter_study_area_classrooms(classrooms_data):
     """
-    标准化楼宇名称
+    过滤出属于允许自习区域的教室
 
     Args:
-        raw_building (str): 原始楼宇名称
+        classrooms_data (list): 教室数据列表，每个元素应包含classroom_name字段
 
     Returns:
-        str: 标准化后的楼宇名称
+        list: 过滤后的教室数据列表
     """
-    import re
+    filtered_classrooms = []
 
-    raw_building = raw_building.strip()
+    for classroom_data in classrooms_data:
+        if isinstance(classroom_data, dict) and 'classroom_name' in classroom_data:
+            classroom_name = classroom_data['classroom_name']
+        elif isinstance(classroom_data, str):
+            classroom_name = classroom_data
+        else:
+            continue
 
-    # 首先尝试完整匹配
-    for key, value in BUILDING_NAME_MAPPING.items():
-        if key in raw_building:
-            return value
+        result = is_allowed_classroom(classroom_name)
+        if result['is_allowed']:
+            if isinstance(classroom_data, dict):
+                # 添加楼宇信息到数据中
+                classroom_data.update({
+                    'campus_name': result['campus'],
+                    'building_name': result['building'],
+                    'building_code': result['building_code']
+                })
+                filtered_classrooms.append(classroom_data)
+            else:
+                # 如果是字符串，转换为包含楼宇信息的字典
+                filtered_classrooms.append({
+                    'classroom_name': classroom_name,
+                    'campus_name': result['campus'],
+                    'building_name': result['building'],
+                    'building_code': result['building_code']
+                })
 
-    # 如果是单字母+数字的格式（如A101），提取字母部分
-    match = re.match(r'^([A-Za-z]+)', raw_building)
-    if match:
-        letter = match.group(1).upper()
-        if letter in BUILDING_NAME_MAPPING:
-            return BUILDING_NAME_MAPPING[letter]
-        return f"{letter}"
+    return filtered_classrooms
 
-    # 提取中文楼宇名称
-    chinese_match = re.search(r'([\u4e00-\u9fff]+楼?)', raw_building)
-    if chinese_match:
-        return chinese_match.group(1)
 
-    # 如果都匹配不到，返回清理后的原始名称
-    clean_name = re.sub(r'[^A-Za-z\u4e00-\u9fff]', '', raw_building)
-    return clean_name if clean_name else raw_building
+def get_all_allowed_buildings():
+    """
+    获取所有允许的自习楼宇列表
+
+    Returns:
+        list: 按校区组织的楼宇信息列表
+    """
+    buildings = []
+
+    for campus_name, campus_buildings in ALLOWED_STUDY_AREAS.items():
+        campus_info = {
+            'campus': campus_name,
+            'campus_id': CAMPUS_MAPPING.get(campus_name, ''),
+            'buildings': []
+        }
+
+        for building_name, building_info in campus_buildings.items():
+            campus_info['buildings'].append({
+                'building': building_name,
+                'building_code': building_info['code'],
+                'description': building_info['description'],
+                'pattern_description': f"格式要求: {building_info['code']}[1-4]xx" if building_info['code'] != '沪西二教' else "格式要求: 沪西二教xxx"
+            })
+
+        buildings.append(campus_info)
+
+    return buildings
+
+
+def get_campus_buildings(campus_id):
+    """
+    获取指定校区的允许自习楼宇
+
+    Args:
+        campus_id (str): 校区ID
+
+    Returns:
+        list: 楼宇信息列表
+    """
+    campus_name = CAMPUS_ID_TO_NAME.get(str(campus_id))
+    if not campus_name or campus_name not in ALLOWED_STUDY_AREAS:
+        return []
+
+    buildings = []
+    for building_name, building_info in ALLOWED_STUDY_AREAS[campus_name].items():
+        buildings.append({
+            'building': building_name,
+            'building_code': building_info['code'],
+            'description': building_info['description'],
+            'pattern_description': f"格式要求: {building_info['code']}[1-4]xx" if building_info['code'] != '沪西二教' else "格式要求: 沪西二教xxx"
+        })
+
+    return buildings
+
+
+# ============================================================================
+# 调试和统计函数
+# ============================================================================
+
+def get_config_summary():
+    """
+    获取配置摘要信息
+
+    Returns:
+        dict: 配置摘要
+    """
+    total_buildings = sum(len(buildings)
+                          for buildings in ALLOWED_STUDY_AREAS.values())
+
+    return {
+        'total_campuses': len(ALLOWED_STUDY_AREAS),
+        'total_buildings': total_buildings,
+        'campus_details': {
+            campus: len(buildings) for campus, buildings in ALLOWED_STUDY_AREAS.items()
+        },
+        'note': 'NOTE2: 已取消优先级机制，只支持指定的自习区域'
+    }
+
+
+# ============================================================================
+# 为了向后兼容，保留一些旧的函数接口（但功能已更新）
+# ============================================================================
+
+def is_blacklisted_room(classroom_name):
+    """
+    向后兼容函数：检查教室是否应该被过滤掉
+    现在的逻辑是：不在允许列表中的教室都被视为"黑名单"
+
+    Returns:
+        dict: 兼容旧格式的返回值
+    """
+    result = is_allowed_classroom(classroom_name)
+
+    return {
+        'is_blacklisted': not result['is_allowed'],
+        'reason': result['reason'] if not result['is_allowed'] else ''
+    }
+
+
+def extract_building_from_classroom(classroom_name):
+    """
+    向后兼容函数：从教室名称中提取楼宇名称
+    """
+    result = get_building_from_classroom(classroom_name)
+    return result['building'] if result else ''
+
+
+# 为了向后兼容，保留旧的常量名
+# 但实际上现在不再使用优先级机制
+BUILDING_PRIORITY = {}  # 空字典，因为不再使用优先级
