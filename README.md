@@ -277,10 +277,12 @@ npm run serve           # will start on localhost:4173
 
 Then you can access the application at `http://localhost:5173`.
 
-## Personal Note(Fork Author)
+## Docker Deployment
 
-- branch:
-  - custom: 保留了小的修改，包括config路径、手动登陆等，readme比master稍晚一点
-  - master: 撤销了config修改，保留了手动登陆，readme最新
-    - 直接基于原项目进行个人二次开发，详见`CHANGE_LOG.md`。
+You can also deploy the application using Docker. Make sure you have Docker and Docker Compose installed.
+
+```bash
+docker-compose up --build -d
+```
+
 
