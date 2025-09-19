@@ -368,10 +368,10 @@ class tjSql:
             try:
                 self.insertTeachers(
                     course["teacherList"], course["arrangeInfo"]
-                )  # Insert teachers
+                )
                 self.insertMajorAndCourse(
                     course["majorList"], course["id"]
-                )  # Insert major and course
+                )
             except Exception as e:
                 print(e)
                 print("\n\n\n插入教师数据发生异常\n\n\n")
@@ -379,40 +379,217 @@ class tjSql:
     def summarizeClassroomsSchedule(self):
         """
         Summarize classrooms course schedule based on teacher `arrangeInfoText`, for feature: `Classroom Schedule`
+        You need to fill out the table: `classroom_info` and `classroom_schedule`
+        """
+        import re
+
+        print("开始分析并填充教室课表数据...")
+
+        try:
+            self.cursor.execute("DELETE FROM classroom_schedule")
+            self.cursor.execute("DELETE FROM classroom_info")
+            self.db.commit()
+            print("已清空现有的教室数据表")
+        except Exception as e:
+            print(f"清空教室数据表时出错: {e}")
+
+        # 获取所有有效的课程和教师安排信息
+        query = """
+        SELECT DISTINCT 
+            t.arrangeInfoText,
+            cd.id as courseId,
+            cd.courseName,
+            cd.campus,
+            cd.calendarId,
+            t.teacherName,
+            t.teacherCode
+        FROM teacher t 
+        JOIN coursedetail cd ON t.teachingClassId = cd.id
+        WHERE t.arrangeInfoText IS NOT NULL 
+        AND t.arrangeInfoText != ''
+        AND t.arrangeInfoText != 'null'
         """
 
-    # NOTE 亡羊补牢（更新表格结构）的时候需要的函数，暂时不用
+        self.cursor.execute(query)
+        results = self.cursor.fetchall()
 
-    def updateCredits(self, course):
-        """
-        Update credits
-        """
-        sql = "UPDATE coursedetail SET credit = %s WHERE id = %s"
+        classroom_info_dict = {}  # 用于去重教室信息并生成ID映射
+        classroom_schedules = []  # 存储课表信息
 
-        val = (course["credits"], course["id"])
+        weekday_map = {
+            '星期一': 1, '星期二': 2, '星期三': 3, '星期四': 4,
+            '星期五': 5, '星期六': 6, '星期日': 7
+        }
 
-        self.cursor.execute(sql, val)
+        campus_map = {'1': '四平路校区', '3': '嘉定校区', '4': '沪西校区'}  # 校区映射
 
-        print(f"Credits updated for course {course['id']} to {course['credits']}")
+        processed_count = 0
 
-        # input()
+        for row in results:
+            arrange_text, course_id, course_name, campus, calendar_id, teacher_name, teacher_code = row
+
+            # 确保arrange_text是字符串类型
+            if not arrange_text or not isinstance(arrange_text, str):
+                continue
+
+            # 解析arrange_text中的每一行
+            lines = str(arrange_text).strip().split('\n')
+
+            for line in lines:
+                line = str(line).strip()
+                if not line:
+                    continue
+
+                # 使用正则表达式解析格式: "教师名(工号) 星期X节次 [周次] 教室"
+                pattern = r'(.+?)\((\d+)\)\s+(星期[一二三四五六日])(\d+-?\d*)节\s+\[(\d+-?\d*)\]\s+(.+?)(?:\s|$)'
+                match = re.search(pattern, str(line))
+
+                if match:
+                    teacher, teacher_id, weekday, periods, weeks, classroom = match.groups()
+
+                    # 解析教室信息并确定校区
+                    classroom = str(classroom).strip()
+                    if not classroom:
+                        continue
+
+                    # 根据教室名称确定校区和楼宇
+                    classroom_campus = None
+                    building = ""
+
+                    if re.match(r'[ABGF]\d{3}', classroom):  # 嘉定校区
+                        classroom_campus = '嘉定校区'
+                        building_code = classroom[0]
+                        if building_code == 'A':
+                            building = '安楼'
+                        elif building_code == 'B':
+                            building = '博楼'
+                        elif building_code == 'G':
+                            building = '广楼'
+                        elif building_code == 'F':
+                            building = '复楼'
+                    elif re.match(r'[南北]\d{3}', classroom):  # 四平路校区
+                        classroom_campus = '四平路校区'
+                        if classroom.startswith('南'):
+                            building = '南楼'
+                        elif classroom.startswith('北'):
+                            building = '北楼'
+                    elif '沪西二教' in classroom:  # 沪西校区
+                        classroom_campus = '沪西校区'
+                        building = '二教'
+                    else:
+                        # 默认使用课程的校区
+                        classroom_campus = campus_map.get(str(campus), '四平路校区')
+                        building = '未知楼宇'
+
+                    # 添加教室信息到字典中（去重）
+                    if classroom not in classroom_info_dict:
+                        classroom_info_dict[classroom] = {
+                            'building': building,
+                            'campus': classroom_campus
+                        }
+
+                    # 解析时间段
+                    if '-' in periods:
+                        start_period, end_period = map(int, periods.split('-'))
+                    else:
+                        start_period = end_period = int(periods)
+
+                    # 解析周次
+                    if '-' in weeks:
+                        start_week, end_week = map(int, weeks.split('-'))
+                    else:
+                        start_week = end_week = int(weeks)
+
+                    # 获取星期几的数字
+                    weekday_num = weekday_map.get(weekday, 1)
+
+                    # 为每个时间段创建课表记录
+                    for period in range(start_period, end_period + 1):
+                        classroom_schedules.append({
+                            'classroom_name': classroom,
+                            'calendar_id': calendar_id,
+                            'course_id': course_id,
+                            'day_of_week': weekday_num,
+                            'time_slot': period,
+                            'week_start': start_week,
+                            'week_end': end_week,
+                            'teacher_name': teacher_name,
+                            'course_name': course_name
+                        })
+
+            processed_count += 1
+            if processed_count % 100 == 0:
+                print(f"已处理 {processed_count} 条课程记录...")
+
+        # 插入教室信息
+        print(f"准备插入 {len(classroom_info_dict)} 个教室...")
+        classroom_info_sql = "INSERT INTO classroom_info (classroom_name, building, campus) VALUES (%s, %s, %s)"
+        classroom_id_map = {}  # 教室名称到ID的映射
+
+        for classroom_name, info in classroom_info_dict.items():
+            try:
+                self.cursor.execute(
+                    classroom_info_sql, (classroom_name, info['building'], info['campus']))
+                classroom_id = self.cursor.lastrowid
+                classroom_id_map[classroom_name] = classroom_id
+            except Exception as e:
+                print(f"插入教室信息失败 {classroom_name}: {e}")
 
         self.db.commit()
+        print(f"成功插入 {len(classroom_info_dict)} 个教室信息")
 
-    def updateLanguage(self, course):
+        # 插入课表信息
+        print(f"准备插入 {len(classroom_schedules)} 条课表记录...")
+        schedule_sql = """
+        INSERT INTO classroom_schedule 
+        (classroom_id, calendar_id, day_of_week, time_slot, week_start, week_end, course_id, course_name, teacher_name) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        Update language
-        """
-        sql = "UPDATE coursedetail SET teachingLanguage = %s WHERE id = %s"
 
-        val = (course["teachingLanguage"], course["id"])
+        batch_size = 1000
+        successful_inserts = 0
 
-        self.cursor.execute(sql, val)
+        for i in range(0, len(classroom_schedules), batch_size):
+            batch = classroom_schedules[i:i + batch_size]
+            batch_values = []
 
-        print(
-            f"Language updated for course {course['id']} to {course['teachingLanguage']}"
-        )
+            for schedule in batch:
+                classroom_id = classroom_id_map.get(schedule['classroom_name'])
+                if classroom_id:
+                    batch_values.append((
+                        classroom_id,
+                        schedule['calendar_id'],
+                        schedule['day_of_week'],
+                        schedule['time_slot'],
+                        schedule['week_start'],
+                        schedule['week_end'],
+                        schedule['course_id'],
+                        schedule['course_name'],
+                        schedule['teacher_name']
+                    ))
 
-        # input()
+            if batch_values:
+                try:
+                    self.cursor.executemany(schedule_sql, batch_values)
+                    self.db.commit()
+                    successful_inserts += len(batch_values)
+                    print(
+                        f"已插入 {successful_inserts} / {len(classroom_schedules)} 条课表记录")
+                except Exception as e:
+                    print(f"插入课表记录批次失败: {e}")
+                    # 尝试逐条插入以找出问题记录
+                    for values in batch_values:
+                        try:
+                            self.cursor.execute(schedule_sql, values)
+                            successful_inserts += 1
+                        except Exception as e2:
+                            print(f"单条记录插入失败: 教室ID={values[0]} - {e2}")
+                    self.db.commit()
 
-        self.db.commit()
+        print("教室课表数据汇总完成！")
+        print(f"总共处理了 {processed_count} 条课程记录")
+        print(f"生成了 {len(classroom_info_dict)} 个教室信息")
+        print(f"成功插入了 {successful_inserts} 条课表记录")
+
+    # NOTE 删除了增量更新函数
+    # 上游教务信息每学期基本不会变，所以备份之后整个重新拉取一遍数据是比较省事的

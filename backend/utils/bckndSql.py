@@ -372,7 +372,8 @@ class bckndSql:
             query_params.append("%" + searchBody["courseName"] + "%")
         if searchBody["courseCode"] != "":
             condition += " AND (c.courseCode = %s OR c.code = %s)"
-            query_params.extend([searchBody["courseCode"], searchBody["courseCode"]])
+            query_params.extend(
+                [searchBody["courseCode"], searchBody["courseCode"]])
         if searchBody["teacherCode"] != "":
             condition += " AND t.teacherCode = %s"
             query_params.append(searchBody["teacherCode"])
@@ -689,7 +690,8 @@ class bckndSql:
                         "room": room_name,
                         "campus": room_data.get(
                             "campus_name",
-                            CAMPUS_ID_TO_NAME.get(room_data["campus_id"], "Unknown"),
+                            CAMPUS_ID_TO_NAME.get(
+                                room_data["campus_id"], "Unknown"),
                         ),
                         "building": room_data.get("building_name", ""),
                         "building_code": room_data.get("building_code", ""),
@@ -704,7 +706,8 @@ class bckndSql:
                 )
 
         # 按总空闲时长和教室名称排序（不再使用优先级）
-        room_suggestions.sort(key=lambda x: (-x["totalFreeDuration"], x["room"]))
+        room_suggestions.sort(
+            key=lambda x: (-x["totalFreeDuration"], x["room"]))
 
         print(f"[DEBUG] Final suggestions: {len(room_suggestions)} rooms")
 
@@ -892,7 +895,8 @@ class bckndSql:
         buildings.sort(key=lambda x: x["building"])
 
         # 调试输出：处理后的结果
-        print(f"[DEBUG] Final result: {len(buildings)} allowed study buildings:")
+        print(
+            f"[DEBUG] Final result: {len(buildings)} allowed study buildings:")
         for building in buildings:
             print(
                 f"[DEBUG]   {building['building']} ({building['building_code']}): {building['roomCount']} rooms"
@@ -933,6 +937,201 @@ class bckndSql:
             building["rooms"] = ["All"] + building["rooms"]
 
         return buildings
+
+    def getAllBuildings(self, campus, calendarId):
+        """
+        Get all buildings in a campus using new classroom_info table
+
+        Args:
+            campus: 校区名称 (e.g., "四平路校区", "嘉定校区", "沪西校区")
+            calendarId: 学期ID
+
+        Returns:
+            List of buildings with their classroom counts and names
+        """
+        # 导入配置文件
+        from study_room_config import filter_campus_buildings, normalize_building_name
+
+        query = """
+        SELECT DISTINCT building, classroom_name
+        FROM classroom_info 
+        WHERE campus = %s
+        ORDER BY building, classroom_name
+        """
+
+        self.cursor.execute(query, (campus,))
+        results = self.cursor.fetchall()
+
+        # 按楼宇分组
+        buildings_dict = {}
+        for building, classroom_name in results:
+            normalized_building = normalize_building_name(building)
+            if normalized_building not in buildings_dict:
+                buildings_dict[normalized_building] = {
+                    "building": normalized_building,
+                    "roomCount": 0,
+                    "rooms": []
+                }
+            buildings_dict[normalized_building]["roomCount"] += 1
+            buildings_dict[normalized_building]["rooms"].append(classroom_name)
+
+        # 转换为列表格式
+        buildings = list(buildings_dict.values())
+
+        # 应用配置文件过滤
+        buildings = filter_campus_buildings(campus, buildings)
+
+        # 排序：按楼宇名称排序
+        buildings.sort(key=lambda x: x["building"])
+
+        return buildings
+
+    def getStudyRoomSuggestions(self, campus, building, dayOfWeek, startTime, endTime, calendarId, specificRoom=None):
+        """
+        Get study room suggestions based on criteria using new database tables
+
+        Args:
+            campus: 校区名称
+            building: 楼宇名称 (可选)
+            dayOfWeek: 星期几 (1-7)
+            startTime: 开始节次 (1-12)
+            endTime: 结束节次 (1-12)
+            calendarId: 学期ID
+            specificRoom: 指定教室 (可选)
+
+        Returns:
+            List of room suggestions with availability information
+        """
+        # 导入配置文件
+        from study_room_config import filter_study_area_classrooms, is_valid_study_area
+
+        # 构建基础查询条件
+        base_conditions = ["ci.campus = %s"]
+        base_params = [campus]
+
+        if building:
+            base_conditions.append("ci.building = %s")
+            base_params.append(building)
+
+        if specificRoom:
+            base_conditions.append("ci.classroom_name = %s")
+            base_params.append(specificRoom)
+
+        # 获取所有符合条件的教室
+        classroom_query = f"""
+        SELECT DISTINCT ci.classroom_name, ci.building, ci.campus
+        FROM classroom_info ci
+        WHERE {' AND '.join(base_conditions)}
+        ORDER BY ci.building, ci.classroom_name
+        """
+
+        self.cursor.execute(classroom_query, base_params)
+        classrooms = self.cursor.fetchall()
+
+        suggestions = []
+
+        for classroom_name, room_building, room_campus in classrooms:
+            # 检查是否是有效的自习区域
+            if not is_valid_study_area(room_campus, room_building, classroom_name):
+                continue
+
+            # 查询该教室在指定时间段的占用情况
+            schedule_query = """
+            SELECT time_slot, week_start, week_end, course_name, teacher_name
+            FROM classroom_schedule cs
+            JOIN classroom_info ci ON cs.classroom_id = ci.id
+            WHERE ci.classroom_name = %s 
+            AND cs.calendar_id = %s
+            AND cs.day_of_week = %s
+            AND cs.time_slot BETWEEN %s AND %s
+            ORDER BY cs.time_slot
+            """
+
+            self.cursor.execute(schedule_query, (
+                classroom_name, calendarId, dayOfWeek, startTime, endTime
+            ))
+
+            occupied_periods = self.cursor.fetchall()
+
+            # 分析空闲时段
+            free_periods = self._analyzeFreePeriods(
+                startTime, endTime, occupied_periods
+            )
+
+            # 判断是否完全空闲
+            total_requested_periods = endTime - startTime + 1
+            total_free_periods = sum(period["duration"]
+                                     for period in free_periods)
+            is_fully_free = total_free_periods == total_requested_periods
+
+            # 构建建议对象
+            suggestion = {
+                "room": classroom_name,
+                "building": room_building,
+                "campus": room_campus,
+                "freePeriods": free_periods,
+                "isFullyFree": is_fully_free,
+                "availabilityScore": total_free_periods / total_requested_periods if total_requested_periods > 0 else 0
+            }
+
+            suggestions.append(suggestion)
+
+        # 过滤和排序建议
+        suggestions = filter_study_area_classrooms(suggestions)
+
+        # 排序：完全空闲的在前，然后按可用性得分排序
+        suggestions.sort(
+            key=lambda x: (-int(x["isFullyFree"]), -x["availabilityScore"], x["room"]))
+
+        return suggestions
+
+    def _analyzeFreePeriods(self, startTime, endTime, occupied_periods):
+        """
+        分析空闲时段
+
+        Args:
+            startTime: 请求的开始节次
+            endTime: 请求的结束节次
+            occupied_periods: 已占用的时段列表
+
+        Returns:
+            List of free periods with start, end, and duration
+        """
+        free_periods = []
+
+        # 创建占用时段的集合
+        occupied_slots = set()
+        for period_info in occupied_periods:
+            time_slot, week_start, week_end, course_name, teacher_name = period_info
+            # 简化处理：假设当前周在课程周次范围内
+            occupied_slots.add(time_slot)
+
+        # 找出连续的空闲时段
+        current_start = None
+
+        for slot in range(startTime, endTime + 1):
+            if slot not in occupied_slots:
+                if current_start is None:
+                    current_start = slot
+            else:
+                if current_start is not None:
+                    # 结束一个空闲时段
+                    free_periods.append({
+                        "start": current_start,
+                        "end": slot - 1,
+                        "duration": slot - current_start
+                    })
+                    current_start = None
+
+        # 处理最后一个空闲时段
+        if current_start is not None:
+            free_periods.append({
+                "start": current_start,
+                "end": endTime,
+                "duration": endTime - current_start + 1
+            })
+
+        return free_periods
 
 
 # debug

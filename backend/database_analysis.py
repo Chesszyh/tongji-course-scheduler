@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-数据库教室数据分析脚本
+数据库教室数据分析脚本(调试用)
 分析当前数据库中的教室数据结构和分布情况
 """
 
@@ -176,7 +176,7 @@ def analyze_classroom_distribution():
             print(f"学期 {calendar_id}: {len(classrooms)} 个教室")
 
         print("\n" + "=" * 40)
-        print("4. 符合NOTE2要求的自习区域统计")
+        print("4. 指定的自习区域统计（参考study_room_config.py）")
         print("=" * 40)
         for campus, buildings in pattern_stats.items():
             if campus == "其他":

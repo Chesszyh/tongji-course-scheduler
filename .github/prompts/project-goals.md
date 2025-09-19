@@ -38,7 +38,7 @@ Define the task to achieve, including specific requirements, constraints, and su
       - “标识”是课程在数据库中的实际名称
       - 其他结果均不应出现在可选择的自习区域内
     - [x] 添加调试输出，比如返回所有楼宇信息列表
-    - [ ] 允许根据关键词自定义blacklist
+    - [x] (废弃)允许根据关键词自定义blacklist
     - [x] 应当按照楼号搜索，现在是按照教室。合并一些楼宇，比如G201. G202 都合并到 G楼 选项里，这样选项展开后可以是：
       - 安楼
         - All(所有教室)
