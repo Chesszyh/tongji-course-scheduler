@@ -215,7 +215,7 @@ def findCourseByMajor():
     }
     ```
 
-    Response：
+    Response:
     ```json
     {
         "code": 200,
@@ -329,7 +329,8 @@ def findCourseByMajor():
             course["arrangementInfo"] = []
 
             for location in splitEndline(course["locations"]):
-                course["arrangementInfo"].append(arrangementTextToObj(location))
+                course["arrangementInfo"].append(
+                    arrangementTextToObj(location))
 
             del course["locations"]
 
@@ -349,7 +350,8 @@ def findCourseByMajor():
             else:
                 # 如果arrangementInfo不同，则合并
                 if current_course["arrangementInfo"] != course["arrangementInfo"]:
-                    current_course["arrangementInfo"].extend(course["arrangementInfo"])
+                    current_course["arrangementInfo"].extend(
+                        course["arrangementInfo"])
 
         res["courses"] = merged_courses
 
@@ -527,7 +529,8 @@ def findCourseByNatureId():
             )
 
     with bckndSql.bckndSql() as sql:
-        result = sql.findCourseByNatureId(payload["ids"], payload["calendarId"])
+        result = sql.findCourseByNatureId(
+            payload["ids"], payload["calendarId"])
 
     return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
@@ -627,7 +630,8 @@ def findCourseDetailByCode():
         else:
             # 如果arrangementInfo不同，则合并
             if current_course["arrangementInfo"] != course["arrangementInfo"]:
-                current_course["arrangementInfo"].extend(course["arrangementInfo"])
+                current_course["arrangementInfo"].extend(
+                    course["arrangementInfo"])
 
     result = merged_result
 
@@ -772,7 +776,7 @@ def findCourseByTime():
         message: "查询成功"
     }
     ```
-    接口太慢了，一天 100 门课的数据量，需要 40s 左右，需要优化
+    TODO 接口太慢了，一天 100 门课的数据量，需要 40s 左右，需要优化
     """
 
     payload = request.json
@@ -944,10 +948,11 @@ def getStudyRoomSuggestions():
     ```json
     {
         "campus": "四平路校区",
-        "building": "安楼",  // 可选
-        "dayOfWeek": 1,     // 1-7, 星期一到星期日
-        "startTime": 6,     // 开始节次
-        "endTime": 11,      // 结束节次
+        "building": "安楼",     // 可选
+        "specificRoom": "A101", // 可选，具体教室
+        "dayOfWeek": 1,         // 1-7, 星期一到星期日
+        "startTime": 6,         // 开始节次
+        "endTime": 11,          // 结束节次
         "calendarId": 119
     }
     ```
@@ -973,7 +978,7 @@ def getStudyRoomSuggestions():
                 },
                 {
                     "room": "安楼A204",
-                    "campus": "四平路校区",
+                    "campus": "四平路校区", 
                     "freePeriods": [
                         {
                             "start": 6,
@@ -996,7 +1001,8 @@ def getStudyRoomSuggestions():
 
     payload = request.json
 
-    required_fields = ["campus", "dayOfWeek", "startTime", "endTime", "calendarId"]
+    required_fields = ["campus", "dayOfWeek",
+                       "startTime", "endTime", "calendarId"]
     for field in required_fields:
         if field not in payload or payload[field] is None:
             return (
@@ -1043,6 +1049,7 @@ def getStudyRoomSuggestions():
             payload["startTime"],
             payload["endTime"],
             payload["calendarId"],
+            payload.get("specificRoom"),  # 新增可选参数
         )
 
     # 生成汇总信息
@@ -1054,7 +1061,8 @@ def getStudyRoomSuggestions():
     suggestions.sort(
         key=lambda x: (
             -int(x["isFullyFree"]),  # 完全空闲的排前面
-            -sum(period["duration"] for period in x["freePeriods"]),  # 按总可用时长排序
+            -sum(period["duration"]
+                 for period in x["freePeriods"]),  # 按总可用时长排序
             x["room"],  # 最后按教室名称排序
         )
     )
@@ -1081,7 +1089,7 @@ def getStudyRoomSuggestions():
 @app.route("/api/getAllBuildings", methods=["POST"])
 def getAllBuildings():
     """
-    Get all buildings in a specific campus.
+    Get all buildings in a specific campus with room details.
 
     Payload:
     ```json
@@ -1096,7 +1104,20 @@ def getAllBuildings():
     {
         "code": 200,
         "msg": "查询成功",
-        "data": ["安楼", "北楼", "南楼", "综合楼"]
+        "data": [
+            {
+                "building": "安楼",
+                "rooms": ["All", "A101", "A102", "A201"],
+                "roomCount": 3,
+                "priority": 1
+            },
+            {
+                "building": "博楼", 
+                "rooms": ["All", "B101", "B102"],
+                "roomCount": 2,
+                "priority": 2
+            }
+        ]
     }
     ```
     """
@@ -1116,6 +1137,7 @@ def getAllBuildings():
         )
 
     with bckndSql.bckndSql() as sql:
-        buildings = sql.getAllBuildings(payload["campus"], payload["calendarId"])
+        buildings = sql.getAllBuildingsWithRooms(
+            payload["campus"], payload["calendarId"])
 
     return jsonify({"code": 200, "msg": "查询成功", "data": buildings}), 200

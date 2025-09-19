@@ -32,13 +32,31 @@
             style="width: 200px"
             allow-clear
             :loading="buildingsLoading"
+            @change="onBuildingChange"
           >
             <a-select-option 
               v-for="building in buildings" 
-              :key="building" 
-              :value="building"
+              :key="building.building" 
+              :value="building.building"
             >
-              {{ building }}
+              {{ building.building }} ({{ building.roomCount }}间教室)
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <a-form-item label="具体教室" v-if="searchCriteria.building && availableRooms.length > 0">
+          <a-select
+            v-model:value="searchCriteria.specificRoom"
+            placeholder="全部教室（可选）"
+            style="width: 200px"
+            allow-clear
+          >
+            <a-select-option 
+              v-for="room in availableRooms" 
+              :key="room" 
+              :value="room"
+            >
+              {{ room === 'All' ? '全部教室' : room }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -228,6 +246,7 @@ import {
 interface SearchCriteria {
   campus: string
   building?: string
+  specificRoom?: string
   dayOfWeek: number
   startTime: number
   endTime: number
@@ -252,9 +271,17 @@ interface SuggestionSummary {
   fullyFreeRooms: number
 }
 
+interface BuildingInfo {
+  building: string
+  rooms: string[]
+  roomCount: number
+  priority: number
+}
+
 interface RequestData {
   campus: string
   building?: string
+  specificRoom?: string
   dayOfWeek: number
   startTime: number
   endTime: number
@@ -274,7 +301,7 @@ export default defineComponent({
   data() {
     return {
       suggestions: [] as StudyRoomSuggestion[],
-      buildings: [] as string[],
+      buildings: [] as BuildingInfo[],
       summary: null as SuggestionSummary | null,
       suggestionsLoading: false,
       buildingsLoading: false,
@@ -282,6 +309,7 @@ export default defineComponent({
       searchCriteria: {
         campus: '四平路校区',
         building: undefined,
+        specificRoom: undefined,
         dayOfWeek: 1,
         startTime: 6,
         endTime: 11
@@ -295,11 +323,17 @@ export default defineComponent({
              this.searchCriteria.startTime && 
              this.searchCriteria.endTime &&
              this.searchCriteria.startTime < this.searchCriteria.endTime
+    },
+    availableRooms() {
+      if (!this.searchCriteria.building) return []
+      const selectedBuilding = this.buildings.find(b => b.building === this.searchCriteria.building)
+      return selectedBuilding ? selectedBuilding.rooms : []
     }
   },
   watch: {
     'searchCriteria.campus'() {
       this.searchCriteria.building = undefined
+      this.searchCriteria.specificRoom = undefined
       this.buildings = []
       if (this.searchCriteria.campus) {
         this.loadBuildings()
@@ -315,8 +349,14 @@ export default defineComponent({
     },
 
     onCampusChange() {
-      // 校区变化时清除楼宇选择
+      // 校区变化时清除楼宇和教室选择
       this.searchCriteria.building = undefined
+      this.searchCriteria.specificRoom = undefined
+    },
+
+    onBuildingChange() {
+      // 楼宇变化时清除具体教室选择
+      this.searchCriteria.specificRoom = undefined
     },
 
     async loadBuildings() {
@@ -370,6 +410,11 @@ export default defineComponent({
         // 如果选择了楼宇，添加到请求中
         if (this.searchCriteria.building) {
           requestData.building = this.searchCriteria.building
+        }
+
+        // 如果选择了具体教室，添加到请求中
+        if (this.searchCriteria.specificRoom && this.searchCriteria.specificRoom !== 'All') {
+          requestData.specificRoom = this.searchCriteria.specificRoom
         }
 
         const response = await fetch('/api/getStudyRoomSuggestions', {

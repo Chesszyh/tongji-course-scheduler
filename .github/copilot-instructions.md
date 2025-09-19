@@ -123,3 +123,5 @@ The project is evolving toward an **AI-powered course recommendation system**:
 - AI-driven automatic course scheduling based on student preferences
 
 When implementing new features, prioritize maintainability of the three-tier architecture and ensure database schema consistency across crawler and backend components.
+
+About project goals and todos, see `.github/prompts/project-goals.md`. For recent changes, see `CHANGE_LOG.md`.
