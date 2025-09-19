@@ -12,47 +12,42 @@ import re
 ALLOWED_STUDY_AREAS = {
     '嘉定校区': {
         '安楼': {
-            'pattern': re.compile(r'^安楼A[1-4]\d{2}'),  # 安楼A1xx-A4xx
+            # A1xx-A4xx，xxx为三位数字，第1位在1-4之间
+            'pattern': re.compile(r'^A[1-4]\d{2}$'),
             'code': 'A',
-            'description': '嘉定校区安楼',
-            'comment': "设备最新，开放到0:30，最适合自习"
+            'description': '嘉定校区安楼'
         },
         '博楼': {
-            'pattern': re.compile(r'^博楼B[1-4]\d{2}'),  # 博楼B1xx-B4xx
+            'pattern': re.compile(r'^B[1-4]\d{2}$'),  # B1xx-B4xx
             'code': 'B',
-            'description': '嘉定校区博楼',
-            "comment": "开放到21:40，时间短但条件也不错"
+            'description': '嘉定校区博楼'
         },
         '广楼': {
-            'pattern': re.compile(r'^广楼G[1-4]\d{2}'),  # 广楼G1xx-G4xx
+            'pattern': re.compile(r'^G[1-4]\d{2}$'),  # G1xx-G4xx
             'code': 'G',
-            'description': '嘉定校区广楼',
-            "comment": "设备有换新，现在电源多了不少"
+            'description': '嘉定校区广楼'
         },
         '复楼': {
-            'pattern': re.compile(r'^复楼F[1-4]\d{2}'),  # 复楼F1xx-F4xx
+            'pattern': re.compile(r'^F[1-4]\d{2}$'),  # F1xx-F4xx
             'code': 'F',
-            'description': '嘉定校区复楼',
-            "comment": "大阶梯教室多，电源少，开放到22:00左右？"
+            'description': '嘉定校区复楼'
         }
     },
     '四平路校区': {
         '南楼': {
-            'pattern': re.compile(r'^南[1-4]\d{2}'),  # 南1xx-南4xx
+            'pattern': re.compile(r'^南[1-4]\d{2}$'),  # 南1xx-南4xx
             'code': '南',
-            'description': '四平路校区南楼',
-            "comment": "设备新，电源多"
+            'description': '四平路校区南楼'
         },
         '北楼': {
-            'pattern': re.compile(r'^北[1-4]\d{2}'),  # 北1xx-北4xx
+            'pattern': re.compile(r'^北[1-4]\d{2}$'),  # 北1xx-北4xx
             'code': '北',
-            'description': '四平路校区北楼',
-            "comment": "北楼也可以，但我很久没去过了"
+            'description': '四平路校区北楼'
         }
     },
     '沪西校区': {
         '二教': {
-            'pattern': re.compile(r'^沪西二教\d+[^,，\s]*'),  # 沪西二教xxx，xxx为数字+描述
+            'pattern': re.compile(r'^沪西二教\d+[^,，\s]*$'),  # 沪西二教xxx，xxx为数字+描述
             'code': '沪西二教',
             'description': '沪西校区二教'
         }
