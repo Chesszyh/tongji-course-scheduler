@@ -55,5 +55,9 @@ Define the task to achieve, including specific requirements, constraints, and su
   - [ ] Data scraping && Better storaging + displaying
 - [ ] Merge wlc info into course-scheduler project.
 
+## Comments
 
+- 一个`arrangeInfo`字段可以塞进去这么多信息：`"arrangeInfo": "Hans Messerschmid(1801056) 星期一7-10节 [6-7] 博楼B202\nHans Messerschmid(1801056) 星期四5-8节 [6-7] 博楼B202\nHans Messerschmid(1801056) \n星期五5-8节 [6-7] 博楼B202\nHans Messerschmid(1801056) 星期六3-6节 [6-7] 博楼B202"`
+
+不是很原子化啊。
 

@@ -329,8 +329,7 @@ def findCourseByMajor():
             course["arrangementInfo"] = []
 
             for location in splitEndline(course["locations"]):
-                course["arrangementInfo"].append(
-                    arrangementTextToObj(location))
+                course["arrangementInfo"].append(arrangementTextToObj(location))
 
             del course["locations"]
 
@@ -350,8 +349,7 @@ def findCourseByMajor():
             else:
                 # 如果arrangementInfo不同，则合并
                 if current_course["arrangementInfo"] != course["arrangementInfo"]:
-                    current_course["arrangementInfo"].extend(
-                        course["arrangementInfo"])
+                    current_course["arrangementInfo"].extend(course["arrangementInfo"])
 
         res["courses"] = merged_courses
 
@@ -529,8 +527,7 @@ def findCourseByNatureId():
             )
 
     with bckndSql.bckndSql() as sql:
-        result = sql.findCourseByNatureId(
-            payload["ids"], payload["calendarId"])
+        result = sql.findCourseByNatureId(payload["ids"], payload["calendarId"])
 
     return jsonify({"code": 200, "msg": "查询成功", "data": result}), 200
 
@@ -630,8 +627,7 @@ def findCourseDetailByCode():
         else:
             # 如果arrangementInfo不同，则合并
             if current_course["arrangementInfo"] != course["arrangementInfo"]:
-                current_course["arrangementInfo"].extend(
-                    course["arrangementInfo"])
+                current_course["arrangementInfo"].extend(course["arrangementInfo"])
 
     result = merged_result
 
@@ -978,7 +974,7 @@ def getStudyRoomSuggestions():
                 },
                 {
                     "room": "安楼A204",
-                    "campus": "四平路校区", 
+                    "campus": "四平路校区",
                     "freePeriods": [
                         {
                             "start": 6,
@@ -1001,8 +997,7 @@ def getStudyRoomSuggestions():
 
     payload = request.json
 
-    required_fields = ["campus", "dayOfWeek",
-                       "startTime", "endTime", "calendarId"]
+    required_fields = ["campus", "dayOfWeek", "startTime", "endTime", "calendarId"]
     for field in required_fields:
         if field not in payload or payload[field] is None:
             return (
@@ -1061,8 +1056,7 @@ def getStudyRoomSuggestions():
     suggestions.sort(
         key=lambda x: (
             -int(x["isFullyFree"]),  # 完全空闲的排前面
-            -sum(period["duration"]
-                 for period in x["freePeriods"]),  # 按总可用时长排序
+            -sum(period["duration"] for period in x["freePeriods"]),  # 按总可用时长排序
             x["room"],  # 最后按教室名称排序
         )
     )
@@ -1112,7 +1106,7 @@ def getAllBuildings():
                 "priority": 1
             },
             {
-                "building": "博楼", 
+                "building": "博楼",
                 "rooms": ["All", "B101", "B102"],
                 "roomCount": 2,
                 "priority": 2
@@ -1138,6 +1132,7 @@ def getAllBuildings():
 
     with bckndSql.bckndSql() as sql:
         buildings = sql.getAllBuildingsWithRooms(
-            payload["campus"], payload["calendarId"])
+            payload["campus"], payload["calendarId"]
+        )
 
     return jsonify({"code": 200, "msg": "查询成功", "data": buildings}), 200

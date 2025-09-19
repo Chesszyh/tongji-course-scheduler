@@ -24,13 +24,13 @@ def extract_classroom_from_arrange_text(arrange_text):
     classrooms = []
     # 匹配各种教室格式
     patterns = [
-        r'([A-Z]\d{3})',  # A101, B203等
-        r'(南\d{3})',      # 南101等
-        r'(北\d{3})',      # 北101等
-        r'(沪西二教\d+[^,，\s]*)',  # 沪西二教131小教室等
-        r'([ABGF]\d{3})',   # 专门匹配嘉定校区楼宇
-        r'(复\d{3})',      # 复楼
-        r'(广\d{3})',      # 广楼
+        r"([A-Z]\d{3})",  # A101, B203等
+        r"(南\d{3})",  # 南101等
+        r"(北\d{3})",  # 北101等
+        r"(沪西二教\d+[^,，\s]*)",  # 沪西二教131小教室等
+        r"([ABGF]\d{3})",  # 专门匹配嘉定校区楼宇
+        r"(复\d{3})",  # 复楼
+        r"(广\d{3})",  # 广楼
     ]
 
     for pattern in patterns:
@@ -70,26 +70,26 @@ def analyze_classroom_distribution():
 
         # 按校区分类的教室模式
         jiading_patterns = {
-            'A': re.compile(r'A\d{3}'),      # 安楼
-            'B': re.compile(r'B\d{3}'),      # 博楼
-            'G': re.compile(r'G\d{3}'),      # 广楼
-            'F': re.compile(r'F\d{3}'),      # 复楼
+            "A": re.compile(r"A\d{3}"),  # 安楼
+            "B": re.compile(r"B\d{3}"),  # 博楼
+            "G": re.compile(r"G\d{3}"),  # 广楼
+            "F": re.compile(r"F\d{3}"),  # 复楼
         }
 
         siping_patterns = {
-            '南': re.compile(r'南\d{3}'),     # 南楼
-            '北': re.compile(r'北\d{3}'),     # 北楼
+            "南": re.compile(r"南\d{3}"),  # 南楼
+            "北": re.compile(r"北\d{3}"),  # 北楼
         }
 
         huxi_patterns = {
-            '沪西二教': re.compile(r'沪西二教\d+[^,，\s]*'),  # 沪西二教
+            "沪西二教": re.compile(r"沪西二教\d+[^,，\s]*"),  # 沪西二教
         }
 
         pattern_stats = {
-            '嘉定校区': {'安楼': 0, '博楼': 0, '广楼': 0, '复楼': 0},
-            '四平路校区': {'南楼': 0, '北楼': 0},
-            '沪西校区': {'二教': 0},
-            '其他': 0
+            "嘉定校区": {"安楼": 0, "博楼": 0, "广楼": 0, "复楼": 0},
+            "四平路校区": {"南楼": 0, "北楼": 0},
+            "沪西校区": {"二教": 0},
+            "其他": 0,
         }
 
         for row in results:
@@ -108,18 +108,18 @@ def analyze_classroom_distribution():
                 # 检查嘉定校区模式
                 for building_name, pattern in jiading_patterns.items():
                     if pattern.match(classroom):
-                        if building_name == 'A':
-                            pattern_stats['嘉定校区']['安楼'] += 1
-                            building = '安楼'
-                        elif building_name == 'B':
-                            pattern_stats['嘉定校区']['博楼'] += 1
-                            building = '博楼'
-                        elif building_name == 'G':
-                            pattern_stats['嘉定校区']['广楼'] += 1
-                            building = '广楼'
-                        elif building_name == 'F':
-                            pattern_stats['嘉定校区']['复楼'] += 1
-                            building = '复楼'
+                        if building_name == "A":
+                            pattern_stats["嘉定校区"]["安楼"] += 1
+                            building = "安楼"
+                        elif building_name == "B":
+                            pattern_stats["嘉定校区"]["博楼"] += 1
+                            building = "博楼"
+                        elif building_name == "G":
+                            pattern_stats["嘉定校区"]["广楼"] += 1
+                            building = "广楼"
+                        elif building_name == "F":
+                            pattern_stats["嘉定校区"]["复楼"] += 1
+                            building = "复楼"
                         matched = True
                         break
 
@@ -127,12 +127,12 @@ def analyze_classroom_distribution():
                 if not matched:
                     for building_name, pattern in siping_patterns.items():
                         if pattern.match(classroom):
-                            if building_name == '南':
-                                pattern_stats['四平路校区']['南楼'] += 1
-                                building = '南楼'
-                            elif building_name == '北':
-                                pattern_stats['四平路校区']['北楼'] += 1
-                                building = '北楼'
+                            if building_name == "南":
+                                pattern_stats["四平路校区"]["南楼"] += 1
+                                building = "南楼"
+                            elif building_name == "北":
+                                pattern_stats["四平路校区"]["北楼"] += 1
+                                building = "北楼"
                             matched = True
                             break
 
@@ -140,13 +140,13 @@ def analyze_classroom_distribution():
                 if not matched:
                     for building_name, pattern in huxi_patterns.items():
                         if pattern.match(classroom):
-                            pattern_stats['沪西校区']['二教'] += 1
-                            building = '二教'
+                            pattern_stats["沪西校区"]["二教"] += 1
+                            building = "二教"
                             matched = True
                             break
 
                 if not matched:
-                    pattern_stats['其他'] += 1
+                    pattern_stats["其他"] += 1
 
                 if building:
                     building_classroom[building].add(classroom)
@@ -179,16 +179,16 @@ def analyze_classroom_distribution():
         print("4. 符合NOTE2要求的自习区域统计")
         print("=" * 40)
         for campus, buildings in pattern_stats.items():
-            if campus == '其他':
+            if campus == "其他":
                 print(f"{campus}: {buildings} 个不符合要求的教室")
             else:
                 print(f"{campus}:")
                 for building, count in buildings.items():
                     if count > 0:
-                        actual_rooms = len(
-                            building_classroom.get(building, set()))
+                        actual_rooms = len(building_classroom.get(building, set()))
                         print(
-                            f"  {building}: {count} 次使用, {actual_rooms} 个不重复教室")
+                            f"  {building}: {count} 次使用, {actual_rooms} 个不重复教室"
+                        )
 
         print("\n" + "=" * 40)
         print("5. 各楼宇详细教室列表")
@@ -198,7 +198,7 @@ def analyze_classroom_distribution():
             print(f"\n{building} ({len(sorted_rooms)} 个教室):")
             # 每行显示10个教室
             for i in range(0, len(sorted_rooms), 10):
-                batch = sorted_rooms[i:i+10]
+                batch = sorted_rooms[i : i + 10]
                 print(f"  {', '.join(batch)}")
 
         print("\n" + "=" * 40)
@@ -217,13 +217,13 @@ def analyze_classroom_distribution():
 
             # 检查是否符合任何允许的模式
             all_patterns = [
-                re.compile(r'A[1-4]\d{2}'),      # 安楼 A1xx-A4xx
-                re.compile(r'B[1-4]\d{2}'),      # 博楼 B1xx-B4xx
-                re.compile(r'G[1-4]\d{2}'),      # 广楼 G1xx-G4xx
-                re.compile(r'F[1-4]\d{2}'),      # 复楼 F1xx-F4xx
-                re.compile(r'南[1-4]\d{2}'),      # 南楼 南1xx-南4xx
-                re.compile(r'北[1-4]\d{2}'),      # 北楼 北1xx-北4xx
-                re.compile(r'沪西二教\d+[^,，\s]*'),  # 沪西二教
+                re.compile(r"A[1-4]\d{2}"),  # 安楼 A1xx-A4xx
+                re.compile(r"B[1-4]\d{2}"),  # 博楼 B1xx-B4xx
+                re.compile(r"G[1-4]\d{2}"),  # 广楼 G1xx-G4xx
+                re.compile(r"F[1-4]\d{2}"),  # 复楼 F1xx-F4xx
+                re.compile(r"南[1-4]\d{2}"),  # 南楼 南1xx-南4xx
+                re.compile(r"北[1-4]\d{2}"),  # 北楼 北1xx-北4xx
+                re.compile(r"沪西二教\d+[^,，\s]*"),  # 沪西二教
             ]
 
             for pattern in all_patterns:
@@ -232,8 +232,7 @@ def analyze_classroom_distribution():
                     break
 
             if not matched:
-                other_classrooms.append(
-                    (classroom, classroom_counter[classroom]))
+                other_classrooms.append((classroom, classroom_counter[classroom]))
 
         # 按使用频率排序
         other_classrooms.sort(key=lambda x: x[1], reverse=True)
@@ -248,17 +247,18 @@ def analyze_classroom_distribution():
                 print(f"  ... 还有 {len(other_classrooms) - 20} 个不符合要求的教室")
 
         return {
-            'total_classrooms': len(classroom_counter),
-            'classroom_counter': classroom_counter,
-            'campus_classroom': campus_classroom,
-            'building_classroom': building_classroom,
-            'pattern_stats': pattern_stats,
-            'other_classrooms': other_classrooms
+            "total_classrooms": len(classroom_counter),
+            "classroom_counter": classroom_counter,
+            "campus_classroom": campus_classroom,
+            "building_classroom": building_classroom,
+            "pattern_stats": pattern_stats,
+            "other_classrooms": other_classrooms,
         }
 
     except Exception as e:
         print(f"分析过程中出现错误: {e}")
         import traceback
+
         traceback.print_exc()
         return None
 

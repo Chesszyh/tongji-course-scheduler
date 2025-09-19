@@ -54,13 +54,8 @@ def create_classroom_schedule_tables():
           `id` INT NOT NULL AUTO_INCREMENT,
           `classroom_name` VARCHAR(50) NOT NULL COMMENT '教室名称，如A101, 南208等',
           `building` VARCHAR(20) NOT NULL COMMENT '楼宇名称，如安楼、南楼等',
-          `building_code` VARCHAR(10) NOT NULL COMMENT '楼宇代码，如A、南、沪西二教等',
           `campus` VARCHAR(50) NOT NULL COMMENT '校区名称',
-          `floor` INT DEFAULT NULL COMMENT '楼层',
-          `room_number` VARCHAR(10) DEFAULT NULL COMMENT '房间号码部分',
-          `is_study_area` BOOLEAN DEFAULT FALSE COMMENT '是否为允许的自习区域',
-          `capacity` INT DEFAULT NULL COMMENT '教室容量（如果有的话）',
-          `room_type` VARCHAR(20) DEFAULT NULL COMMENT '教室类型，如普通教室、阶梯教室等',
+          `course_schedule` TEXT DEFAULT NULL COMMENT '课程安排，格式：星期(节数1,节数2),如：1(5-6,9-11),2(1-4)',
           `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           PRIMARY KEY (`id`),
@@ -70,7 +65,7 @@ def create_classroom_schedule_tables():
           KEY `idx_study_area` (`is_study_area`),
           KEY `idx_building_code` (`building_code`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci 
-        COMMENT='教室基础信息表，存储所有教室的详细信息';
+        COMMENT='教室基础信息表';
         """
 
         cursor.execute(classroom_info_ddl)
@@ -207,9 +202,13 @@ def create_classroom_schedule_tables():
         print("\n创建的表结构摘要:")
         tables_info = [
             ("classroom_info", "教室基础信息表", "存储所有教室的详细信息"),
-            ("classroom_schedule", "教室课表时间段表", "存储每个教室每个时间段的占用情况"),
+            (
+                "classroom_schedule",
+                "教室课表时间段表",
+                "存储每个教室每个时间段的占用情况",
+            ),
             ("building_summary", "楼宇汇总表", "楼宇统计信息，用于快速查询"),
-            ("v_free_classrooms", "空闲教室查询视图", "用于快速查询指定时间的空闲教室")
+            ("v_free_classrooms", "空闲教室查询视图", "用于快速查询指定时间的空闲教室"),
         ]
 
         for table_name, display_name, description in tables_info:
@@ -224,13 +223,14 @@ def create_classroom_schedule_tables():
     except Exception as e:
         print(f"创建表结构时出现错误: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
     finally:
-        if 'cursor' in locals():
+        if "cursor" in locals():
             cursor.close()
-        if 'db' in locals():
+        if "db" in locals():
             db.close()
 
 

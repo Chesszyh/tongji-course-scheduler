@@ -298,10 +298,6 @@ class tjSql:
         for course in courses:  # The courses array contains 20 courses
             # Handle Foreign Key Constraint First
 
-            print(course)
-            print("\n\n\n")
-            # input()
-
             self.insertLanguage(course)  # Insert language
 
             self.insertCourseLabel(course)  # Insert courseLabel
@@ -316,10 +312,6 @@ class tjSql:
 
             self.insertMajors(course["majorList"])  # Insert major
 
-            # print("下面要插入课程啦，按回车键继续")
-            # input()
-
-            # Insert course
             sql = (
                 "INSERT INTO coursedetail ("
                 "id, "
@@ -372,7 +364,6 @@ class tjSql:
                 print(e)
                 print(val)
                 print("\n\n\n插入数据发生异常\n\n\n")
-                # input()
 
             try:
                 self.insertTeachers(
@@ -384,9 +375,13 @@ class tjSql:
             except Exception as e:
                 print(e)
                 print("\n\n\n插入教师数据发生异常\n\n\n")
-                # input()
 
-    # 亡羊补牢（更新表格结构）的时候需要的函数，暂时不用
+    def summarizeClassroomsSchedule(self):
+        """
+        Summarize classrooms course schedule based on teacher `arrangeInfoText`, for feature: `Classroom Schedule`
+        """
+
+    # NOTE 亡羊补牢（更新表格结构）的时候需要的函数，暂时不用
 
     def updateCredits(self, course):
         """
