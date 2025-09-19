@@ -1,0 +1,66 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: tongji-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: tongji123
+      MYSQL_DATABASE: tongji_course
+      MYSQL_USER: tongji_user
+      MYSQL_PASSWORD: tongji_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./crawler/utils/sqls:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tongji-backend
+    ports:
+      - "1239:1239"
+    volumes:
+      - ./crawler/config.ini:/app/crawler/config.ini:ro
+      - ./backend/config.ini:/app/backend/config.ini:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_APP=backend/app.py
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: tongji-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tongji-crawler
+    volumes:
+      - ./crawler/config.ini:/app/crawler/config.ini:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: "no"
+    command: ["python", "crawler/fetchCourseList.py"]
+    profiles:
+      - crawler
+
+volumes:
+  mysql_data:
