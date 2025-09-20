@@ -1,6 +1,6 @@
 <template>
   <div class="room-timetable">
-    <a-card 
+    <a-card
       :title="roomInfo.room ? `${roomInfo.room} 教室课表` : '教室课表'"
       :bordered="false"
       class="mb-4"
@@ -21,32 +21,59 @@
         <div v-if="!roomInfo.room" class="empty-state">
           <a-empty description="请先选择教室" />
         </div>
-        
+
         <div v-else class="timetable-container">
           <table class="w-full border-collapse border border-gray-300 table-fixed">
             <thead>
               <tr class="bg-gray-200">
                 <th class="border-collapse border border-gray-300 p-1">节次/周次</th>
-                <th v-for="day in ['一', '二', '三', '四', '五', '六', '日']" :key="day" class="border-collapse border border-gray-300 p-1">周{{ day }}</th>
+                <th
+                  v-for="day in ['一', '二', '三', '四', '五', '六', '日']"
+                  :key="day"
+                  class="border-collapse border border-gray-300 p-1"
+                >
+                  周{{ day }}
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(row, index) in timeTable" :key="index" :class="getRowClass(index)">
-                <td class="border-collapse border border-gray-300 text-center h-[26px] p-1" :class="index == 11 ? 'text-red-500' : ''">第{{ index + 1 }}节课</td>
+                <td
+                  class="border-collapse border border-gray-300 text-center h-[26px] p-1"
+                  :class="index == 11 ? 'text-red-500' : ''"
+                >
+                  第{{ index + 1 }}节课
+                </td>
                 <template v-for="(courses, dayIndex) in row">
-                  <td 
+                  <td
                     v-if="!occupied[index][dayIndex]"
                     :key="dayIndex"
                     class="border-collapse border border-gray-300 align-top text-center p-1"
                     :rowspan="maxSpans[index][dayIndex]"
                   >
-                    <div v-if="courses.length > 0" class="bg-indigo-700/90 text-white p-1 h-full rounded-b-xs overflow-x-hidden" :style="{ height: (maxSpans[index][dayIndex] * 45) + 'px' }">
-                      <div v-for="(course, courseIndex) in courses" :key="course.code" class="text-xs h-full cursor-pointer" :class="{ 'border-b border-dashed border-white pb-1 mb-1': courseIndex !== courses.length - 1 }" @click="showCourseDetail(course)">
+                    <div
+                      v-if="courses.length > 0"
+                      class="bg-indigo-700/90 text-white p-1 h-full rounded-b-xs overflow-x-hidden"
+                      :style="{ height: maxSpans[index][dayIndex] * 45 + 'px' }"
+                    >
+                      <div
+                        v-for="(course, courseIndex) in courses"
+                        :key="course.code"
+                        class="text-xs h-full cursor-pointer"
+                        :class="{
+                          'border-b border-dashed border-white pb-1 mb-1':
+                            courseIndex !== courses.length - 1,
+                        }"
+                        @click="showCourseDetail(course)"
+                      >
                         <div class="course-content">
                           <div class="font-semibold">{{ course.courseName }}</div>
                           <div class="text-xs opacity-90">{{ course.code }}</div>
-                          <div v-if="course.teachers && course.teachers.length > 0" class="text-xs opacity-80">
-                            {{ course.teachers.map(t => t.teacherName).join(', ') }}
+                          <div
+                            v-if="course.teachers && course.teachers.length > 0"
+                            class="text-xs opacity-80"
+                          >
+                            {{ course.teachers.map((t) => t.teacherName).join(", ") }}
                           </div>
                         </div>
                       </div>
@@ -61,12 +88,7 @@
     </a-card>
 
     <!-- 课程详情抽屉 -->
-    <a-drawer
-      v-model:open="courseDetailVisible"
-      title="课程详情"
-      width="500"
-      placement="right"
-    >
+    <a-drawer v-model:open="courseDetailVisible" title="课程详情" width="500" placement="right">
       <div v-if="selectedCourse" class="course-detail">
         <a-descriptions :column="1" bordered>
           <a-descriptions-item label="课程名称">
@@ -89,14 +111,23 @@
           </a-descriptions-item>
           <a-descriptions-item label="授课教师">
             <a-space direction="vertical" size="small">
-              <a-tag v-for="teacher in selectedCourse.teachers" :key="teacher.teacherCode" color="blue">
+              <a-tag
+                v-for="teacher in selectedCourse.teachers"
+                :key="teacher.teacherCode"
+                color="blue"
+              >
                 {{ teacher.teacherName }} ({{ teacher.teacherCode }})
               </a-tag>
             </a-space>
           </a-descriptions-item>
           <a-descriptions-item label="上课安排">
             <a-space direction="vertical" size="small">
-              <a-tag v-for="arrangement in selectedCourse.arrangementInfo" :key="arrangement.arrangementText" color="green" class="whitespace-normal">
+              <a-tag
+                v-for="arrangement in selectedCourse.arrangementInfo"
+                :key="arrangement.arrangementText"
+                color="green"
+                class="whitespace-normal"
+              >
                 {{ arrangement.arrangementText }}
               </a-tag>
             </a-space>
@@ -108,10 +139,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import { ReloadOutlined } from '@ant-design/icons-vue';
-import axios from 'axios';
-import { errorNotify } from '@/utils/errorNotify';
+import { defineComponent } from "vue";
+import { ReloadOutlined } from "@ant-design/icons-vue";
+import axios from "axios";
+import { errorNotify } from "@/utils/errorNotify";
 
 interface Teacher {
   teacherCode: string;
@@ -153,25 +184,31 @@ interface CourseOnTable {
 }
 
 export default defineComponent({
-  name: 'RoomTimeTable',
+  name: "RoomTimeTable",
   components: {
-    ReloadOutlined
+    ReloadOutlined,
   },
   props: {
     roomInfo: {
       type: Object,
-      default: () => ({ room: null, calendarId: null })
-    }
+      default: () => ({ room: null, calendarId: null }),
+    },
   },
   data() {
     return {
       loading: false,
       courses: [] as Course[],
-      timeTable: Array(12).fill(null).map(() => Array(7).fill(undefined).map(() => [])) as CourseOnTable[][][],
+      timeTable: Array(12)
+        .fill(null)
+        .map(() =>
+          Array(7)
+            .fill(undefined)
+            .map(() => []),
+        ) as CourseOnTable[][][],
       maxSpans: Array.from({ length: 12 }, () => Array(7).fill(1)),
       occupied: Array.from({ length: 12 }, () => Array(7).fill(false)),
       courseDetailVisible: false,
-      selectedCourse: null as Course | null
+      selectedCourse: null as Course | null,
     };
   },
   watch: {
@@ -184,25 +221,25 @@ export default defineComponent({
         }
       },
       deep: true,
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   methods: {
     async loadRoomSchedule() {
       if (!this.roomInfo.room || !this.roomInfo.calendarId) return;
-      
+
       this.loading = true;
       try {
-        const response = await axios.post('/api/getCoursesByRoom', {
+        const response = await axios.post("/api/getCoursesByRoom", {
           room: this.roomInfo.room,
-          calendarId: this.roomInfo.calendarId
+          calendarId: this.roomInfo.calendarId,
         });
-        
+
         this.courses = response.data.data;
         this.updateTimeTable();
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        errorNotify('加载教室课表失败: ' + errorMessage);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        errorNotify("加载教室课表失败: " + errorMessage);
       } finally {
         this.loading = false;
       }
@@ -210,14 +247,26 @@ export default defineComponent({
 
     clearSchedule() {
       this.courses = [];
-      this.timeTable = Array(12).fill(null).map(() => Array(7).fill(undefined).map(() => []));
+      this.timeTable = Array(12)
+        .fill(null)
+        .map(() =>
+          Array(7)
+            .fill(undefined)
+            .map(() => []),
+        );
       this.maxSpans = Array.from({ length: 12 }, () => Array(7).fill(1));
       this.occupied = Array.from({ length: 12 }, () => Array(7).fill(false));
     },
 
     updateTimeTable() {
       // 初始化数据结构
-      const newTimeTable = Array(12).fill(null).map(() => Array(7).fill(undefined).map(() => [])) as CourseOnTable[][][];
+      const newTimeTable = Array(12)
+        .fill(null)
+        .map(() =>
+          Array(7)
+            .fill(undefined)
+            .map(() => []),
+        ) as CourseOnTable[][][];
       const newMaxSpans = Array.from({ length: 12 }, () => Array(7).fill(1));
       const newOccupied = Array.from({ length: 12 }, () => Array(7).fill(false));
 
@@ -226,19 +275,19 @@ export default defineComponent({
         course.arrangementInfo.forEach((arrangement: ArrangementInfo) => {
           const dayIndex = arrangement.occupyDay - 1; // 转换为0索引
           const timeSlots = arrangement.occupyTime;
-          
+
           if (dayIndex >= 0 && dayIndex < 7 && timeSlots.length > 0) {
             const startRow = timeSlots[0] - 1; // 转换为0索引
-            
+
             if (startRow >= 0 && startRow < 12) {
               // 创建课程显示对象
               const courseOnTable: CourseOnTable = {
                 ...course,
                 occupyDay: arrangement.occupyDay,
                 occupyTime: timeSlots,
-                showText: `${course.courseName}\n${course.code}`
+                showText: `${course.courseName}\n${course.code}`,
               };
-              
+
               newTimeTable[startRow][dayIndex].push(courseOnTable);
             }
           }
@@ -250,7 +299,7 @@ export default defineComponent({
         for (let col = 0; col < 7; col++) {
           const courses = newTimeTable[row][col];
           if (courses.length > 0) {
-            newMaxSpans[row][col] = Math.max(...courses.map(c => c.occupyTime.length));
+            newMaxSpans[row][col] = Math.max(...courses.map((c) => c.occupyTime.length));
           }
         }
       }
@@ -276,8 +325,8 @@ export default defineComponent({
     },
 
     getRowClass(index: number) {
-      if (index === 11) return 'bg-red-50';
-      return Math.floor(index / 2) % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+      if (index === 11) return "bg-red-50";
+      return Math.floor(index / 2) % 2 === 0 ? "bg-white" : "bg-gray-50";
     },
 
     showCourseDetail(course: CourseOnTable) {
@@ -287,8 +336,8 @@ export default defineComponent({
 
     refreshSchedule() {
       this.loadRoomSchedule();
-    }
-  }
+    },
+  },
 });
 </script>
 
@@ -328,7 +377,8 @@ table {
   min-width: 800px;
 }
 
-td, th {
+td,
+th {
   vertical-align: top;
   min-height: 45px;
 }

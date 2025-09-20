@@ -18,7 +18,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        
+
         <a-form-item label="搜索教室">
           <a-input
             v-model:value="searchKeyword"
@@ -35,10 +35,10 @@
 
       <a-spin :spinning="loading" tip="正在加载教室列表...">
         <div v-if="filteredRooms.length > 0" class="room-grid">
-          <a-card 
-            v-for="room in paginatedRooms" 
+          <a-card
+            v-for="room in paginatedRooms"
             :key="room"
-            :class="['room-card', { 'selected': selectedRoom === room }]"
+            :class="['room-card', { selected: selectedRoom === room }]"
             @click="selectRoom(room)"
             hoverable
             size="small"
@@ -49,11 +49,7 @@
             </template>
             <div class="room-info">
               <a-tag v-if="selectedRoom === room" color="blue">已选择</a-tag>
-              <a-button 
-                type="link" 
-                size="small"
-                @click.stop="viewRoomSchedule(room)"
-              >
+              <a-button type="link" size="small" @click.stop="viewRoomSchedule(room)">
                 查看课表
               </a-button>
             </div>
@@ -78,29 +74,29 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import { SearchOutlined, HomeOutlined } from '@ant-design/icons-vue';
-import axios from 'axios';
-import { errorNotify } from '@/utils/errorNotify';
+import { defineComponent } from "vue";
+import { SearchOutlined, HomeOutlined } from "@ant-design/icons-vue";
+import axios from "axios";
+import { errorNotify } from "@/utils/errorNotify";
 
 export default defineComponent({
-  name: 'RoomSelector',
+  name: "RoomSelector",
   components: {
     SearchOutlined,
-    HomeOutlined
+    HomeOutlined,
   },
-  emits: ['room-selected', 'view-schedule'],
+  emits: ["room-selected", "view-schedule"],
   data() {
     return {
-      calendarList: [] as Array<{calendarId: number, calendarName: string}>,
+      calendarList: [] as Array<{ calendarId: number; calendarName: string }>,
       selectedCalendar: null as number | null,
       rooms: [] as string[],
       filteredRooms: [] as string[],
       selectedRoom: null as string | null,
-      searchKeyword: '',
+      searchKeyword: "",
       loading: false,
       currentPage: 1,
-      pageSize: 20
+      pageSize: 20,
     };
   },
   computed: {
@@ -108,7 +104,7 @@ export default defineComponent({
       const start = (this.currentPage - 1) * this.pageSize;
       const end = start + this.pageSize;
       return this.filteredRooms.slice(start, end);
-    }
+    },
   },
   async mounted() {
     await this.loadCalendarList();
@@ -121,27 +117,27 @@ export default defineComponent({
   methods: {
     async loadCalendarList() {
       try {
-        const response = await axios.get('/api/getAllCalendar');
+        const response = await axios.get("/api/getAllCalendar");
         this.calendarList = response.data.data;
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        errorNotify('加载学期列表失败: ' + errorMessage);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        errorNotify("加载学期列表失败: " + errorMessage);
       }
     },
 
     async loadRooms() {
       if (!this.selectedCalendar) return;
-      
+
       this.loading = true;
       try {
-        const response = await axios.post('/api/getAllRooms', {
-          calendarId: this.selectedCalendar
+        const response = await axios.post("/api/getAllRooms", {
+          calendarId: this.selectedCalendar,
         });
         this.rooms = response.data.data;
         this.filterRooms();
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        errorNotify('加载教室列表失败: ' + errorMessage);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        errorNotify("加载教室列表失败: " + errorMessage);
       } finally {
         this.loading = false;
       }
@@ -149,17 +145,17 @@ export default defineComponent({
 
     async onCalendarChange() {
       this.selectedRoom = null;
-      this.searchKeyword = '';
+      this.searchKeyword = "";
       this.currentPage = 1;
       await this.loadRooms();
     },
 
     filterRooms() {
-      if (this.searchKeyword.trim() === '') {
+      if (this.searchKeyword.trim() === "") {
         this.filteredRooms = [...this.rooms];
       } else {
-        this.filteredRooms = this.rooms.filter(room => 
-          room.toLowerCase().includes(this.searchKeyword.toLowerCase())
+        this.filteredRooms = this.rooms.filter((room) =>
+          room.toLowerCase().includes(this.searchKeyword.toLowerCase()),
         );
       }
       this.currentPage = 1;
@@ -167,21 +163,21 @@ export default defineComponent({
 
     selectRoom(room: string) {
       this.selectedRoom = room;
-      this.$emit('room-selected', {
+      this.$emit("room-selected", {
         room,
-        calendarId: this.selectedCalendar
+        calendarId: this.selectedCalendar,
       });
     },
 
     viewRoomSchedule(room: string) {
       this.selectRoom(room);
       // 触发查看课表事件
-      this.$emit('view-schedule', {
+      this.$emit("view-schedule", {
         room,
-        calendarId: this.selectedCalendar
+        calendarId: this.selectedCalendar,
       });
-    }
-  }
+    },
+  },
 });
 </script>
 

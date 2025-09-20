@@ -4,7 +4,7 @@
     <div class="teacher-evaluation-section flex-shrink-0 border-b border-gray-200 p-4">
       <TeacherEvaluation :selectedCourse="currentSelectedCourse" />
     </div>
-    
+
     <!-- 下方：AI对话框区域 -->
     <div class="chat-section flex-1 flex flex-col min-h-0">
       <AiChatBox />
@@ -13,20 +13,20 @@
 </template>
 
 <script lang="ts">
-import { defineAsyncComponent } from 'vue';
+import { defineAsyncComponent } from "vue";
 
 export default {
-  name: 'AiChatSidebar',
+  name: "AiChatSidebar",
   components: {
-    TeacherEvaluation: defineAsyncComponent(() => import('./TeacherEvaluation.vue')),
-    AiChatBox: defineAsyncComponent(() => import('./AiChatBox.vue'))
+    TeacherEvaluation: defineAsyncComponent(() => import("./TeacherEvaluation.vue")),
+    AiChatBox: defineAsyncComponent(() => import("./AiChatBox.vue")),
   },
   computed: {
     currentSelectedCourse() {
       return this.$store.state.clickedCourseInfo;
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>

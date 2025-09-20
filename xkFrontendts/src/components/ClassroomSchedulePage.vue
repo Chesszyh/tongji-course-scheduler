@@ -5,12 +5,9 @@
         <a-row :gutter="[16, 16]">
           <!-- 左侧：教室选择器 -->
           <a-col :xs="24" :lg="8" :xl="6">
-            <RoomSelector 
-              @room-selected="onRoomSelected"
-              @view-schedule="onViewSchedule"
-            />
+            <RoomSelector @room-selected="onRoomSelected" @view-schedule="onViewSchedule" />
           </a-col>
-          
+
           <!-- 右侧：教室课表 -->
           <a-col :xs="24" :lg="16" :xl="18">
             <RoomTimeTable :room-info="selectedRoomInfo" />
@@ -22,9 +19,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import RoomSelector from './RoomSelector.vue';
-import RoomTimeTable from './RoomTimeTable.vue';
+import { defineComponent } from "vue";
+import RoomSelector from "./RoomSelector.vue";
+import RoomTimeTable from "./RoomTimeTable.vue";
 
 interface RoomInfo {
   room: string | null;
@@ -32,17 +29,17 @@ interface RoomInfo {
 }
 
 export default defineComponent({
-  name: 'ClassroomSchedulePage',
+  name: "ClassroomSchedulePage",
   components: {
     RoomSelector,
-    RoomTimeTable
+    RoomTimeTable,
   },
   data() {
     return {
       selectedRoomInfo: {
         room: null,
-        calendarId: null
-      } as RoomInfo
+        calendarId: null,
+      } as RoomInfo,
     };
   },
   methods: {
@@ -52,8 +49,8 @@ export default defineComponent({
 
     onViewSchedule(roomInfo: RoomInfo) {
       this.selectedRoomInfo = { ...roomInfo };
-    }
-  }
+    },
+  },
 });
 </script>
 

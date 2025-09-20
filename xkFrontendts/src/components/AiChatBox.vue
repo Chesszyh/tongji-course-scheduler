@@ -7,11 +7,9 @@
         <span class="font-medium text-gray-800">AI 排课助手(NOTE 仍在开发，当前为模拟数据)</span>
         <a-badge :count="messages.length" :overflowCount="99" class="ml-auto" />
       </div>
-      <div class="text-xs text-gray-500 mt-1">
-        智能课程推荐 • 自动排课规划
-      </div>
+      <div class="text-xs text-gray-500 mt-1">智能课程推荐 • 自动排课规划</div>
     </div>
-    
+
     <!-- Chat Messages -->
     <div class="chat-messages flex-1 overflow-y-auto p-4 space-y-4" ref="messagesContainer">
       <!-- 欢迎消息 -->
@@ -35,10 +33,10 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 消息列表 -->
-      <div 
-        v-for="(message, index) in messages" 
+      <div
+        v-for="(message, index) in messages"
         :key="index"
         class="message-item"
         :class="message.type"
@@ -52,7 +50,7 @@
             <UserOutlined class="text-gray-600" />
           </div>
         </div>
-        
+
         <div v-else class="ai-message">
           <div class="message-avatar">
             <RobotOutlined class="text-blue-600" />
@@ -72,7 +70,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Chat Input -->
     <div class="chat-input flex-shrink-0 p-4 border-t border-gray-200 bg-white">
       <div class="flex gap-2">
@@ -83,8 +81,8 @@
           :disabled="isLoading"
           class="flex-1"
         />
-        <a-button 
-          type="primary" 
+        <a-button
+          type="primary"
           :loading="isLoading"
           @click="sendMessage"
           :disabled="!inputMessage.trim()"
@@ -94,28 +92,16 @@
           </template>
         </a-button>
       </div>
-      
+
       <!-- 快捷操作按钮 -->
       <div class="quick-actions mt-3 flex gap-2 flex-wrap">
-        <a-button 
-          size="small" 
-          type="text"
-          @click="sendQuickMessage('帮我推荐优秀的教师')"
-        >
+        <a-button size="small" type="text" @click="sendQuickMessage('帮我推荐优秀的教师')">
           📚 推荐优秀教师
         </a-button>
-        <a-button 
-          size="small" 
-          type="text"
-          @click="sendQuickMessage('帮我自动排课')"
-        >
+        <a-button size="small" type="text" @click="sendQuickMessage('帮我自动排课')">
           🤖 自动排课
         </a-button>
-        <a-button 
-          size="small" 
-          type="text"
-          @click="sendQuickMessage('检查课程冲突')"
-        >
+        <a-button size="small" type="text" @click="sendQuickMessage('检查课程冲突')">
           ⚠️ 检查冲突
         </a-button>
       </div>
@@ -124,83 +110,83 @@
 </template>
 
 <script lang="ts">
-import { RobotOutlined, UserOutlined, SendOutlined } from '@ant-design/icons-vue';
-import { nextTick } from 'vue';
+import { RobotOutlined, UserOutlined, SendOutlined } from "@ant-design/icons-vue";
+import { nextTick } from "vue";
 
 interface ChatMessage {
   id: string;
-  type: 'user' | 'ai';
+  type: "user" | "ai";
   content: string;
   timestamp: Date;
   loading?: boolean;
 }
 
 export default {
-  name: 'AiChatBox',
+  name: "AiChatBox",
   components: {
     RobotOutlined,
     UserOutlined,
-    SendOutlined
+    SendOutlined,
   },
   data() {
     return {
       messages: [] as ChatMessage[],
-      inputMessage: '',
-      isLoading: false
-    }
+      inputMessage: "",
+      isLoading: false,
+    };
   },
   methods: {
     async sendMessage() {
       if (!this.inputMessage.trim() || this.isLoading) return;
-      
+
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
-        type: 'user',
+        type: "user",
         content: this.inputMessage.trim(),
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      
+
       this.messages.push(userMessage);
       const messageContent = this.inputMessage.trim();
-      this.inputMessage = '';
+      this.inputMessage = "";
       this.isLoading = true;
-      
+
       // 添加AI加载消息
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        type: 'ai',
-        content: '',
+        type: "ai",
+        content: "",
         timestamp: new Date(),
-        loading: true
+        loading: true,
       };
       this.messages.push(aiMessage);
-      
+
       await this.scrollToBottom();
-      
+
       try {
         // 模拟AI响应
         const response = await this.generateAiResponse(messageContent);
-        
+
         // 更新AI消息
-        const messageIndex = this.messages.findIndex(m => m.id === aiMessage.id);
+        const messageIndex = this.messages.findIndex((m) => m.id === aiMessage.id);
         if (messageIndex !== -1) {
           this.messages[messageIndex] = {
             ...aiMessage,
             content: response,
             loading: false,
-            timestamp: new Date()
+            timestamp: new Date(),
           };
         }
       } catch (error) {
-        console.error('AI响应失败:', error);
+        console.error("AI响应失败:", error);
         // 错误处理
-        const messageIndex = this.messages.findIndex(m => m.id === aiMessage.id);
+        const messageIndex = this.messages.findIndex((m) => m.id === aiMessage.id);
         if (messageIndex !== -1) {
           this.messages[messageIndex] = {
             ...aiMessage,
-            content: '抱歉，AI服务暂时不可用，请稍后再试。',
+            content: "抱歉，AI服务暂时不可用，请稍后再试。",
             loading: false,
-            timestamp: new Date()
+            timestamp: new Date(),
           };
         }
       } finally {
@@ -208,30 +194,30 @@ export default {
         await this.scrollToBottom();
       }
     },
-    
+
     async sendQuickMessage(message: string) {
       this.inputMessage = message;
       await this.sendMessage();
     },
-    
+
     async generateAiResponse(userMessage: string): Promise<string> {
       // 模拟API调用延迟
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
+
       // 简单的消息匹配逻辑 - 将来替换为真实的AI API
       const message = userMessage.toLowerCase();
-      
-      if (message.includes('推荐') && (message.includes('教师') || message.includes('老师'))) {
+
+      if (message.includes("推荐") && (message.includes("教师") || message.includes("老师"))) {
         return this.generateTeacherRecommendation();
-      } else if (message.includes('自动排课') || message.includes('排课')) {
+      } else if (message.includes("自动排课") || message.includes("排课")) {
         return this.generateScheduleRecommendation();
-      } else if (message.includes('冲突')) {
+      } else if (message.includes("冲突")) {
         return this.generateConflictCheck();
       } else {
         return this.generateGeneralResponse();
       }
     },
-    
+
     generateTeacherRecommendation(): string {
       const currentCourse = this.$store.state.clickedCourseInfo;
       if (currentCourse && currentCourse.courseName) {
@@ -270,7 +256,7 @@ export default {
         `;
       }
     },
-    
+
     generateScheduleRecommendation(): string {
       const stagedCourses = this.$store.state.commonLists.stagedCourses;
       if (stagedCourses.length > 0) {
@@ -315,7 +301,7 @@ export default {
         `;
       }
     },
-    
+
     generateConflictCheck(): string {
       return `
         <div class="ai-response">
@@ -338,7 +324,7 @@ export default {
         </div>
       `;
     },
-    
+
     generateGeneralResponse(): string {
       return `
         我是您的AI排课助手，可以帮助您：
@@ -358,28 +344,28 @@ export default {
         或者点击下方的快捷按钮开始！
       `;
     },
-    
+
     formatAiMessage(content: string): string {
       // 简单的HTML格式化
-      return content.replace(/\n/g, '<br>');
+      return content.replace(/\n/g, "<br>");
     },
-    
+
     formatTime(timestamp: Date): string {
-      return timestamp.toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit'
+      return timestamp.toLocaleTimeString("zh-CN", {
+        hour: "2-digit",
+        minute: "2-digit",
       });
     },
-    
+
     async scrollToBottom() {
       await nextTick();
       const container = this.$refs.messagesContainer as HTMLElement;
       if (container) {
         container.scrollTop = container.scrollHeight;
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -476,7 +462,9 @@ export default {
   line-height: 1.4;
 }
 
-.recommendation-card, .schedule-recommendation, .conflict-check {
+.recommendation-card,
+.schedule-recommendation,
+.conflict-check {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -492,7 +480,8 @@ export default {
   border-left: 3px solid #3b82f6;
 }
 
-.benefits, .schedule-tips {
+.benefits,
+.schedule-tips {
   margin-top: 12px;
   padding-top: 8px;
   border-top: 1px solid #e5e7eb;
