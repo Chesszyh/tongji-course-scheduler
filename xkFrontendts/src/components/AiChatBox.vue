@@ -4,7 +4,7 @@
     <div class="chat-header flex-shrink-0 p-4 border-b border-gray-200 bg-white">
       <div class="flex items-center gap-2">
         <RobotOutlined class="text-blue-600" />
-        <span class="font-medium text-gray-800">AI 排课助手</span>
+        <span class="font-medium text-gray-800">AI 排课助手(NOTE 仍在开发，当前为模拟数据)</span>
         <a-badge :count="messages.length" :overflowCount="99" class="ml-auto" />
       </div>
       <div class="text-xs text-gray-500 mt-1">

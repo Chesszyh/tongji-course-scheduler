@@ -1,0 +1,3 @@
+[submodule "wlc"]
+	path = wlc
+	url = https://github.com/Chesszyh/wlc_mirror.git
