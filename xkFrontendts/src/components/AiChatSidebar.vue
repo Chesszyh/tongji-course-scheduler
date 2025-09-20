@@ -1,7 +1,8 @@
 <template>
   <div class="ai-chat-sidebar h-full flex flex-col">
     <!-- 上方：教师评价展示区 -->
-    <div class="teacher-evaluation-section flex-shrink-0 border-b border-gray-200 p-4">
+    <div class="teacher-evaluation-section flex-shrink-0 border-b p-4"
+         :class="$store.state.theme.isDark ? 'border-gray-600' : 'border-gray-200'">
       <TeacherEvaluation :selectedCourse="currentSelectedCourse" />
     </div>
 
@@ -32,20 +33,21 @@ export default {
 <style scoped>
 .ai-chat-sidebar {
   height: 100%;
-  background: #ffffff;
+  background: var(--bg-primary);
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s ease;
 }
 
 .teacher-evaluation-section {
   max-height: 40%;
   overflow-y: auto;
-  border-bottom: 1px solid #e8e8e8;
 }
 
 .chat-section {
   flex: 1;
-  background: #fafafa;
-  min-height: 0; /* 重要：确保flex布局正确工作 */
+  background: var(--bg-secondary);
+  min-height: 0;
+  transition: background-color 0.3s ease;
 }
 </style>

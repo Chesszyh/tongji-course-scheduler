@@ -136,3 +136,98 @@ body {
   border-color: var(--border-color) !important;
   color: var(--text-primary) !important;
 }
+
+/* 卡片暗色主题 */
+.dark .ant-card {
+  background-color: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark .ant-card-head {
+  background-color: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.dark .ant-card-head-title {
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-card-body {
+  background-color: var(--bg-primary) !important;
+}
+
+/* TimeTable 表格暗色主题 */
+.dark table {
+  background-color: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark table th {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark table td {
+  background-color: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark table thead tr {
+  background-color: var(--bg-secondary) !important;
+}
+
+/* TailwindCSS 覆盖 */
+.dark .bg-gray-200 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.dark .border-gray-300 {
+  border-color: var(--border-color) !important;
+}
+
+.dark .text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+.dark .text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+/* 下拉选择框暗色主题 */
+.dark .ant-select-dropdown {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.dark .ant-select-item {
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-select-item:hover {
+  background-color: rgba(24, 144, 255, 0.1) !important;
+}
+
+.dark .ant-select-item-option-selected {
+  background-color: rgba(24, 144, 255, 0.2) !important;
+}
+
+/* 滚动条暗色主题 */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #606060;
+}
