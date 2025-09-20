@@ -931,3 +931,59 @@ def getCoursesByRoom():
         "msg": "查询成功",
         "data": result
     }), 200
+
+@app.route('/api/getCourseReviews', methods=['POST'])
+def getCourseReviews():
+    '''
+    Get teacher evaluations for a specific course.
+
+    Payload:
+    ```json
+    {
+        "courseCode": "002009"
+    }
+    ```
+
+    Response:
+    ```json
+    {
+        "code": 200,
+        "msg": "查询成功",
+        "data": [
+            {
+                "teacherId": "001",
+                "teacherName": "张教授",
+                "teacherCode": "T001",
+                "rating": 4.5,
+                "reviewCount": 23,
+                "latestComment": "讲课很清晰，作业量适中，推荐选择。",
+                "wulongchaUrl": "https://1.tongji.icu/teacher/001"
+            }
+        ]
+    }
+    ```
+    '''
+
+    payload = request.json
+
+    # 字段合法性检验
+    if not payload.get('courseCode'):
+        return jsonify({
+            "code": 400,
+            "msg": "请指定 courseCode",
+        }), 400
+
+    print(f"DEBUG: 查询课程评价，courseCode: {payload['courseCode']}")
+
+    with bckndSql.bckndSql() as sql:
+        result = sql.getCourseReviews(payload['courseCode'])
+
+    print(f"DEBUG: 查询结果数量: {len(result) if result else 0}")
+    for review in result or []:
+        print(f"DEBUG: 评价数据: {review}")
+
+    return jsonify({
+        "code": 200,
+        "msg": "查询成功",
+        "data": result or []
+    }), 200

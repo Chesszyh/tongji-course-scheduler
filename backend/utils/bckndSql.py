@@ -543,6 +543,70 @@ class bckndSql:
         
         return courses
 
+    def getCourseReviews(self, courseCode):
+        '''
+        Get course reviews for a specific course code
+        '''
+
+        # 根据课程代码查询评价汇总数据
+        query = """
+        SELECT
+            crs.course_code,
+            crs.teacher_name,
+            crs.total_reviews,
+            crs.avg_rating,
+            (
+                SELECT cr.comment
+                FROM course_review cr
+                WHERE cr.course_code = crs.course_code
+                AND cr.teacher_name = crs.teacher_name
+                AND cr.comment IS NOT NULL
+                AND cr.comment != ''
+                ORDER BY cr.created_at DESC
+                LIMIT 1
+            ) as latest_comment,
+            CONCAT('https://1.tongji.icu/course/', crs.course_code) as wulongcha_url
+        FROM course_review_summary crs
+        WHERE crs.course_code LIKE %s
+        AND crs.total_reviews > 0
+        ORDER BY crs.avg_rating DESC
+        """
+
+        # 支持前缀匹配，如输入"002009"可以匹配"00200901", "00200902"等
+        course_pattern = f"{courseCode}%"
+
+        print(f"DEBUG SQL: 查询课程评价，课程代码模式: {course_pattern}")
+
+        try:
+            self.cursor.execute(query, (course_pattern,))
+            result = self.cursor.fetchall()
+
+            print(f"DEBUG SQL: 原始查询结果: {result}")
+
+            # 转换为前端需要的格式
+            reviews = []
+            for row in result:
+                course_code, teacher_name, total_reviews, avg_rating, latest_comment, wulongcha_url = row
+
+                review_data = {
+                    "teacherId": f"teacher_{course_code}_{teacher_name}",  # 生成唯一ID
+                    "teacherName": teacher_name or "未知教师",
+                    "teacherCode": "",  # 暂时为空，后续可以从teacher表关联
+                    "rating": float(avg_rating) if avg_rating else 0.0,
+                    "reviewCount": int(total_reviews) if total_reviews else 0,
+                    "latestComment": latest_comment or "",
+                    "wulongchaUrl": wulongcha_url
+                }
+                reviews.append(review_data)
+
+            print(f"DEBUG SQL: 转换后的评价数据: {reviews}")
+            return reviews
+
+        except Exception as e:
+            print(f"DEBUG SQL: 查询失败: {str(e)}")
+            # 如果查询失败，返回空列表
+            return []
+
 # testObject = {
 #     "calendarId": 119,
 #     "courseName": "上海",
