@@ -1,13 +1,16 @@
 <template>
   <div class="ai-chat-box h-full flex flex-col">
     <!-- Chat Header -->
-    <div class="chat-header flex-shrink-0 p-4 border-b border-gray-200 bg-white">
+    <div class="chat-header flex-shrink-0 p-4 border-b"
+         :class="$store.state.theme.isDark ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-white'">
       <div class="flex items-center gap-2">
         <RobotOutlined class="text-blue-600" />
-        <span class="font-medium text-gray-800">AI 排课助手(NOTE 仍在开发，当前为模拟数据)</span>
+        <span class="font-medium"
+              :class="$store.state.theme.isDark ? 'text-gray-200' : 'text-gray-800'">AI 排课助手(NOTE 仍在开发，当前为模拟数据)</span>
         <a-badge :count="messages.length" :overflowCount="99" class="ml-auto" />
       </div>
-      <div class="text-xs text-gray-500 mt-1">智能课程推荐 • 自动排课规划</div>
+      <div class="text-xs mt-1"
+           :class="$store.state.theme.isDark ? 'text-gray-400' : 'text-gray-500'">智能课程推荐 • 自动排课规划</div>
     </div>
 
     <!-- Chat Messages -->
@@ -18,15 +21,18 @@
           <div class="message-avatar">
             <RobotOutlined class="text-blue-600" />
           </div>
-          <div class="message-content bg-blue-50 border-blue-200">
-            <div class="message-text">
+          <div class="message-content"
+               :class="$store.state.theme.isDark ? 'bg-blue-900 border-blue-700' : 'bg-blue-50 border-blue-200'">
+            <div class="message-text"
+                 :class="$store.state.theme.isDark ? 'text-gray-200' : 'text-gray-800'">
               👋 您好！我是AI排课助手，可以帮您：
               <ul class="mt-2 ml-4 space-y-1">
                 <li>• 根据课程评价推荐优秀教师</li>
                 <li>• 智能规避时间冲突</li>
                 <li>• 自动生成最优排课方案</li>
               </ul>
-              <div class="mt-3 text-xs text-gray-600">
+              <div class="mt-3 text-xs"
+                   :class="$store.state.theme.isDark ? 'text-gray-400' : 'text-gray-600'">
                 💡 试试问我："帮我推荐高等数学的好老师" 或 "帮我自动排课"
               </div>
             </div>
@@ -47,7 +53,7 @@
             <div class="message-time">{{ formatTime(message.timestamp) }}</div>
           </div>
           <div class="message-avatar">
-            <UserOutlined class="text-gray-600" />
+            <UserOutlined :class="$store.state.theme.isDark ? 'text-gray-400' : 'text-gray-600'" />
           </div>
         </div>
 
@@ -55,16 +61,19 @@
           <div class="message-avatar">
             <RobotOutlined class="text-blue-600" />
           </div>
-          <div class="message-content bg-gray-50 border-gray-200">
+          <div class="message-content"
+               :class="$store.state.theme.isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'">
             <div v-if="message.loading" class="message-loading">
               <div class="flex items-center gap-2">
                 <a-spin size="small" />
-                <span class="text-gray-500">AI正在思考...</span>
+                <span :class="$store.state.theme.isDark ? 'text-gray-300' : 'text-gray-500'">AI正在思考...</span>
               </div>
             </div>
-            <div v-else class="message-text">
+            <div v-else class="message-text"
+                 :class="$store.state.theme.isDark ? 'text-gray-200' : 'text-gray-800'">
               <div v-html="formatAiMessage(message.content)"></div>
-              <div class="message-time mt-2">{{ formatTime(message.timestamp) }}</div>
+              <div class="message-time mt-2"
+                   :class="$store.state.theme.isDark ? 'text-gray-400' : 'text-gray-500'">{{ formatTime(message.timestamp) }}</div>
             </div>
           </div>
         </div>
@@ -72,7 +81,8 @@
     </div>
 
     <!-- Chat Input -->
-    <div class="chat-input flex-shrink-0 p-4 border-t border-gray-200 bg-white">
+    <div class="chat-input flex-shrink-0 p-4 border-t"
+         :class="$store.state.theme.isDark ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-white'">
       <div class="flex gap-2">
         <a-input
           v-model:value="inputMessage"
@@ -370,15 +380,15 @@ export default {
 
 <style scoped>
 .ai-chat-box {
-  background: #ffffff;
+  background: var(--bg-primary);
 }
 
 .chat-header {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: var(--bg-secondary);
 }
 
 .chat-messages {
-  background: #fafafa;
+  background: var(--bg-secondary);
 }
 
 .message-item {
@@ -402,7 +412,7 @@ export default {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #f1f5f9;
+  background: var(--bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -413,7 +423,7 @@ export default {
   max-width: 70%;
   padding: 12px 16px;
   border-radius: 12px;
-  border: 1px solid;
+  border: 1px solid var(--border-color);
   position: relative;
 }
 
@@ -441,13 +451,13 @@ export default {
 }
 
 .ai-response h4 {
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 12px;
   font-weight: 600;
 }
 
 .ai-response h5 {
-  color: #374151;
+  color: var(--text-primary);
   margin: 12px 0 8px 0;
   font-weight: 500;
 }
@@ -465,15 +475,15 @@ export default {
 .recommendation-card,
 .schedule-recommendation,
 .conflict-check {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px;
   margin: 8px 0;
 }
 
 .teacher-recommendation {
-  background: white;
+  background: var(--bg-primary);
   padding: 10px;
   border-radius: 6px;
   margin: 8px 0;
@@ -484,7 +494,7 @@ export default {
 .schedule-tips {
   margin-top: 12px;
   padding-top: 8px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color);
 }
 
 .no-conflict {
@@ -504,12 +514,13 @@ export default {
   font-size: 12px;
   height: 28px;
   border-radius: 14px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .quick-actions .ant-btn:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
+  background: var(--bg-primary);
+  border-color: var(--border-color);
 }
 </style>
