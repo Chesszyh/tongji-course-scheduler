@@ -15,3 +15,5 @@ private/
 site/
 docs/
 
+# screenshots
+*.png

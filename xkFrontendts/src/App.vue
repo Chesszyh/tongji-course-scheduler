@@ -1,5 +1,5 @@
 <template>
-  <a-config-provider :locale="locale">
+  <a-config-provider :locale="locale" :theme="themeConfig">
     <a-layout class="space-y-4">
       <!-- 所有 layout 放在了组件里, 不要嵌套! -->
       <a-spin
@@ -96,6 +96,7 @@ import "dayjs/locale/zh-cn";
 import axios from "axios";
 import { LoadingOutlined, RobotOutlined, CloseOutlined } from "@ant-design/icons-vue";
 import { h } from "vue";
+import { theme } from 'ant-design-vue';
 import { errorNotify } from "./utils/errorNotify";
 import { getRowSection } from "./utils/timetable";
 import { defineAsyncComponent } from "vue";
@@ -146,6 +147,15 @@ export default {
         },
         spin: true,
       });
+    },
+    themeConfig() {
+      return {
+        algorithm: this.$store.state.theme.isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#1890ff',
+          borderRadius: 6,
+        },
+      };
     },
   },
   methods: {
@@ -357,9 +367,9 @@ export default {
 
 /* AI Chat 侧边栏样式 */
 .ai-chat-sider {
-  background: #ffffff !important;
-  border-left: 1px solid #e8e8e8;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.06);
+  background: var(--bg-primary) !important;
+  border-left: 1px solid var(--border-color);
+  box-shadow: -2px 0 8px var(--shadow-color);
   height: calc(100vh - 200px);
   position: sticky;
   top: 0;
@@ -389,6 +399,8 @@ export default {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   overflow: hidden;
+  background: #1890ff;
+  color: white;
 }
 
 .ai-sidebar-toggle.sidebar-open {
@@ -490,18 +502,5 @@ export default {
   width: 0 !important;
   min-width: 0 !important;
   max-width: 0 !important;
-}
-
-/* 暗黑模式支持 */
-@media (prefers-color-scheme: dark) {
-  .ai-chat-sider {
-    background: #1f1f1f !important;
-    border-left-color: #303030;
-  }
-
-  .ai-sidebar-toggle {
-    background: #1890ff;
-    color: white;
-  }
 }
 </style>

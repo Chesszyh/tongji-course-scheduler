@@ -7,4 +7,8 @@ import App from "./App.vue";
 
 const app = createApp(App);
 
-app.use(Antd).use(store).mount("#app");
+app.use(Antd).use(store);
+
+store.commit('loadSolidify');
+
+app.mount("#app");

@@ -56,6 +56,10 @@ const store = createStore<State>({
         majorNotChanged: false, // 专业是否被改变，如果改变了，需要重新向后端请求数据
       },
       isSpin: false,
+      // 主题设置
+      theme: {
+        isDark: false,
+      },
     };
   },
   mutations: {
@@ -237,12 +241,23 @@ const store = createStore<State>({
     setSpin(state, payload: boolean) {
       state.isSpin = payload;
     },
+    toggleTheme(state) {
+      state.theme.isDark = !state.theme.isDark;
+      document.documentElement.classList.toggle('dark', state.theme.isDark);
+      localStorage.setItem('theme', state.theme.isDark ? 'dark' : 'light');
+    },
+    setTheme(state, isDark: boolean) {
+      state.theme.isDark = isDark;
+      document.documentElement.classList.toggle('dark', isDark);
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    },
     solidify(state) {
       localStorage.setItem("majorSelected", JSON.stringify(state.majorSelected));
       localStorage.setItem("stagedCourses", JSON.stringify(state.commonLists.stagedCourses));
       localStorage.setItem("selectedCourses", JSON.stringify(state.commonLists.selectedCourses));
       localStorage.setItem("occupied", JSON.stringify(state.occupied));
       localStorage.setItem("timeTableData", JSON.stringify(state.timeTableData));
+      localStorage.setItem("theme", state.theme.isDark ? 'dark' : 'light');
     },
     loadSolidify(state) {
       const majorSelected = localStorage.getItem("majorSelected");
@@ -267,6 +282,15 @@ const store = createStore<State>({
       if (timeTableData) {
         state.timeTableData = JSON.parse(timeTableData);
       }
+      const theme = localStorage.getItem("theme");
+      if (theme) {
+        state.theme.isDark = theme === 'dark';
+        document.documentElement.classList.toggle('dark', state.theme.isDark);
+      } else {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        state.theme.isDark = prefersDark;
+        document.documentElement.classList.toggle('dark', prefersDark);
+      }
     },
     clearSolidify() {
       localStorage.removeItem("majorSelected");
@@ -274,6 +298,7 @@ const store = createStore<State>({
       localStorage.removeItem("selectedCourses");
       localStorage.removeItem("occupied");
       localStorage.removeItem("timeTableData");
+      localStorage.removeItem("theme");
     },
   },
   getters: {

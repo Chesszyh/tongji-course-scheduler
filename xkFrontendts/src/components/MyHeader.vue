@@ -1,7 +1,7 @@
 <template>
   <a-layout-header
     class="flex flex-row justify-between items-center"
-    style="background-color: #f6f8fa"
+    :style="{ backgroundColor: $store.state.theme.isDark ? 'var(--bg-secondary)' : '#f6f8fa' }"
   >
     <div class="flex flex-row items-center space-x-4">
       <div class="bg-[url(../assets/myLogo.png)] bg-cover bg-center h-10 w-50"></div>
@@ -22,6 +22,14 @@
       </a-menu>
     </div>
     <div class="float-right flex flex-row space-x-4">
+      <div>
+        <a-button @click="toggleTheme" type="text" class="theme-toggle-btn">
+          <div class="flex flex-row space-x-2 items-center">
+            <component :is="$store.state.theme.isDark ? 'BulbOutlined' : 'BulbFilled'" />
+            <p>{{ $store.state.theme.isDark ? '浅色' : '深色' }}</p>
+          </div>
+        </a-button>
+      </div>
       <div>
         <a-dropdown>
           <template #overlay>
@@ -98,6 +106,8 @@ import {
   LinkOutlined,
   ReadOutlined,
   HomeOutlined,
+  BulbOutlined,
+  BulbFilled,
 } from "@ant-design/icons-vue";
 import { codesToJsonForCSV, jsonToCSV, downloadCSV } from "@/utils/csvRelated";
 import { codesToJsonForXLS, jsonToXLS, downloadXLS } from "@/utils/xlsRelated";
@@ -111,6 +121,8 @@ export default {
     LinkOutlined,
     CalendarOutlined,
     HomeOutlined,
+    BulbOutlined,
+    BulbFilled,
   },
   emits: ["menu-change"],
   data() {
@@ -142,6 +154,23 @@ export default {
     readTheDocs() {
       errorNotify("敬请期待");
     },
+    toggleTheme() {
+      this.$store.commit('toggleTheme');
+    },
   },
 };
 </script>
+
+<style scoped>
+.theme-toggle-btn {
+  transition: all 0.3s ease;
+}
+
+.theme-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+:global(.dark) .theme-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+</style>

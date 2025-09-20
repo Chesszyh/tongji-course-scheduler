@@ -1,1 +1,138 @@
 @import "tailwindcss";
+
+/* 全局暗色主题变量 */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border-color: #e8e8e8;
+  --shadow-color: rgba(0, 0, 0, 0.06);
+}
+
+.dark {
+  --bg-primary: #1f1f1f;
+  --bg-secondary: #2d2d2d;
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --border-color: #404040;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+/* 全局样式应用 */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 自定义布局暗色主题 */
+.dark .ant-layout {
+  background-color: var(--bg-primary) !important;
+}
+
+.dark .ant-layout-header {
+  background-color: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* MyHeader 暗色主题 */
+.dark .ant-menu-horizontal {
+  background: transparent !important;
+  border-bottom: none !important;
+}
+
+.dark .ant-menu-item {
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-menu-item:hover {
+  color: #1890ff !important;
+}
+
+.dark .ant-menu-item-selected {
+  color: #1890ff !important;
+}
+
+/* 按钮暗色主题 */
+.dark .ant-btn {
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-btn:hover {
+  border-color: #1890ff !important;
+  color: #1890ff !important;
+}
+
+/* 下拉菜单暗色主题 */
+.dark .ant-dropdown-menu {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.dark .ant-dropdown-menu-item {
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-dropdown-menu-item:hover {
+  background-color: rgba(24, 144, 255, 0.1) !important;
+}
+
+/* 模态框暗色主题 */
+.dark .ant-modal-content {
+  background-color: var(--bg-primary) !important;
+}
+
+.dark .ant-modal-header {
+  background-color: var(--bg-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.dark .ant-modal-title {
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-modal-close {
+  color: var(--text-primary) !important;
+}
+
+/* 表格暗色主题 */
+.dark .ant-table {
+  background-color: var(--bg-primary) !important;
+}
+
+.dark .ant-table-thead > tr > th {
+  background-color: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-table-tbody > tr:hover > td {
+  background-color: rgba(24, 144, 255, 0.05) !important;
+}
+
+/* 输入框暗色主题 */
+.dark .ant-input {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-input:focus,
+.dark .ant-input:hover {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+/* 选择器暗色主题 */
+.dark .ant-select-selector {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
