@@ -7,8 +7,8 @@ CONFIG.read('config.ini', encoding='utf-8')
 
 # 设置数据库连接
 DB_HOST = CONFIG['Sql']['host']
-DB_USER = CONFIG['Sql']['user']
-DB_PASSWORD = CONFIG['Sql']['password']
+DB_USER = CONFIG['Sql']['w_user']
+DB_PASSWORD = CONFIG['Sql']['w_password']
 DB_DATABASE = CONFIG['Sql']['database']
 DB_PORT = int(CONFIG['Sql']['port'])
 DB_CHARSET = CONFIG['Sql']['charset']
