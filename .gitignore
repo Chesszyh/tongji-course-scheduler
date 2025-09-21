@@ -3,7 +3,6 @@ config.ini
 cookies.json
 __pycache__/
 node_modules/
-sqls/
 
 # local dev files
 *.env
